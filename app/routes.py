@@ -13,4 +13,4 @@ def home():
 
 @main_bp.get("/healthz")
 def health_check():
-    return jsonify({"ok": True, "service": "watermelon-personal"}), 200
+    return jsonify({"ok": True, "service": "myflow"}), 200

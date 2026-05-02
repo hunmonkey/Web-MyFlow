@@ -1,3 +1,5 @@
+name: myflow
+
 services:
   personal-web:
     build: .
@@ -18,8 +20,8 @@ services:
       - WAIT_FOR_DB=1
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-1}
     volumes:
-      - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/instance}:/app/instance
-      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/uploads}:/app/app/static/uploads
+      - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/MyFlow/data/instance}:/app/instance
+      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/MyFlow/data/uploads}:/app/app/static/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -35,7 +37,7 @@ services:
 
   db:
     image: postgres:15-alpine
-    container_name: watermelon-personal-db
+    container_name: DB-MyFlow
     restart: unless-stopped
     env_file:
       - .env
@@ -44,7 +46,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-watermelon_db}
     volumes:
-      - ${POSTGRES_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/postgres}:/var/lib/postgresql/data
+      - ${POSTGRES_HOST_PATH:-/mnt/user/appdata/MyFlow/data/postgres}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-watermelon} -d ${POSTGRES_DB:-watermelon_db}"]
       interval: 10s

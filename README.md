@@ -1,4 +1,4 @@
-# Watermelon Personal Site
+# MyFlow
 
 재훈 님의 개인 사이트를 **Companion(Banana)와 분리된 독립 서비스**로 운영하기 위한 기본 프로젝트입니다.  
 핵심은 "작은 웹앱 + PostgreSQL DB + Docker" 3가지를 한 세트로 묶어두는 것입니다.

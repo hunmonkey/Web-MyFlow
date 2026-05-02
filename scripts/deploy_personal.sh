@@ -22,10 +22,10 @@ echo "[2/3] 컨테이너 상태 확인"
 docker compose ps
 
 echo "[3/3] 웹 컨테이너 health 상태 확인"
-health="$(docker inspect --format '{{.State.Health.Status}}' watermelon-personal-web 2>/dev/null || true)"
+health="$(docker inspect --format '{{.State.Health.Status}}' Web-MyFlow 2>/dev/null || true)"
 if [[ "$health" == "healthy" ]]; then
-  echo "[완료] watermelon-personal-web health=healthy"
+  echo "[완료] Web-MyFlow health=healthy"
 else
   echo "[안내] 아직 healthy가 아닐 수 있습니다. 10~30초 뒤 아래 명령으로 다시 확인해 주세요."
-  echo "docker inspect --format '{{.State.Health.Status}}' watermelon-personal-web"
+  echo "docker inspect --format '{{.State.Health.Status}}' Web-MyFlow"
 fi

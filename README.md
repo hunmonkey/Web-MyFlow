@@ -34,7 +34,7 @@ docker compose up -d --build
 4. 상태 확인
 ```bash
 docker compose ps
-docker inspect --format '{{.State.Health.Status}}' watermelon-personal-web
+docker inspect --format '{{.State.Health.Status}}' Web-MyFlow
 ```
 
 5. 접속 확인  

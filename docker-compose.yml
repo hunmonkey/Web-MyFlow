@@ -1,7 +1,7 @@
 services:
   personal-web:
     build: .
-    container_name: watermelon-personal-web
+    container_name: Web-MyFlow
     restart: unless-stopped
     ports:
       - "985:985"

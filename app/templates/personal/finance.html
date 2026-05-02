@@ -638,7 +638,7 @@ let incomeDonutChart = null;
     `).join('');
   };
 
-  const fetchPersonalStats = async (months) => {
+  const fetchMyFlowStats = async (months) => {
     const safeMonths = Math.max(1, Math.min(24, Number(months || 6)));
     setNotice('개인 통계를 불러오는 중입니다.');
     try {
@@ -664,8 +664,8 @@ let incomeDonutChart = null;
     }
   };
 
-  monthsSelect.addEventListener('change', () => fetchPersonalStats(monthsSelect.value));
-  fetchPersonalStats(monthsSelect.value || 6);
+  monthsSelect.addEventListener('change', () => fetchMyFlowStats(monthsSelect.value));
+  fetchMyFlowStats(monthsSelect.value || 6);
 
   const refreshFinanceOnThemeChange = () => {
     setTimeout(() => {
@@ -679,7 +679,7 @@ let incomeDonutChart = null;
           renderDonut('#income-donut', latestFinanceData?.income_by_category || incData, '수입');
         }
       } else {
-        fetchPersonalStats(monthsSelect.value || 6);
+        fetchMyFlowStats(monthsSelect.value || 6);
       }
       applyTxToggleStyle();
     }, 120);

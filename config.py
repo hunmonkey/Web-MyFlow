@@ -25,7 +25,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or DEFAULT_DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    SITE_TITLE = os.environ.get("SITE_TITLE") or "Watermelon Personal Site"
+    SITE_TITLE = os.environ.get("SITE_TITLE") or "MyFlow"
     OWNER_NAME = os.environ.get("OWNER_NAME") or "재훈"
     CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL") or ""
 

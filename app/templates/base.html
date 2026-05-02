@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}Personal{% endblock %} | Personal</title>
+  <title>{% block title %}MyFlow{% endblock %} | MyFlow</title>
 
   <script nonce="{{ csp_nonce }}">
     (function(){
@@ -96,7 +96,7 @@
   <a href="{{ url_for('personal.index') }}" class="sidebar-brand">
     <div class="brand-icon"><i class="bi bi-house-heart-fill"></i></div>
     <div class="brand-copy">
-      <div class="brand-name">Personal</div>
+      <div class="brand-name">MyFlow</div>
       <div class="brand-subtitle">개인 관리 시스템</div>
     </div>
   </a>
@@ -189,7 +189,7 @@
       <button class="btn btn-icon cs-inline-0025" id="sidebarToggleButton" aria-label="메뉴">
         <i class="bi bi-list cs-inline-0026"></i>
       </button>
-      <span class="cs-inline-0027">Personal</span>
+      <span class="cs-inline-0027">MyFlow</span>
       <button class="btn btn-icon cs-inline-0025" type="button" data-theme-toggle
               aria-label="테마 전환" aria-pressed="false">
         <i class="bi bi-moon cs-theme-icon-dark"></i>

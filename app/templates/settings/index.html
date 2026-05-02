@@ -46,7 +46,7 @@
           <div class="mb-2"><strong>아이디:</strong> {{ current_user.username }}</div>
           <div class="mb-2"><strong>표시 이름:</strong> {{ current_user.display_name }}</div>
           <div class="mb-2"><strong>권한:</strong> {{ '관리자' if current_user.is_admin else '일반 사용자' }}</div>
-          <div class="mb-2"><strong>사이트 이름:</strong> {{ config.SITE_TITLE if config and config.SITE_TITLE else 'Personal' }}</div>
+          <div class="mb-2"><strong>사이트 이름:</strong> {{ config.SITE_TITLE if config and config.SITE_TITLE else 'MyFlow' }}</div>
           <div class="mb-0"><strong>환경:</strong> {{ config.FLASK_ENV if config and config.FLASK_ENV else 'development' }}</div>
         </div>
       </div>

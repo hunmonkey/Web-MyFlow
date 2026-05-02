@@ -10,9 +10,14 @@
     (function(){
       var html = document.documentElement;
       var theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+      var preferredTheme = "{{ preferred_theme|default('system') }}";
       try {
         var saved = localStorage.getItem('cs-theme-mode');
-        if (saved === 'light' || saved === 'dark') theme = saved;
+        if (saved === 'light' || saved === 'dark') {
+          theme = saved;
+        } else if (preferredTheme === 'light' || preferredTheme === 'dark') {
+          theme = preferredTheme;
+        }
       } catch(e) {}
       html.setAttribute('data-cs-theme', theme);
       html.setAttribute('data-bs-theme', theme);
@@ -143,6 +148,23 @@
     </a>
 
     <div class="sidebar-section mt-auto"><span class="sidebar-section-label">시스템</span></div>
+
+    <a href="{{ url_for('settings.formats_index') }}"
+       class="sidebar-item {% if request.endpoint and request.endpoint.startswith('settings.formats') %}active{% endif %}">
+      <i class="bi bi-type item-icon"></i><span>사용자 서식설정</span>
+    </a>
+
+    <a href="{{ url_for('settings.index') }}"
+       class="sidebar-item {% if request.endpoint and (request.endpoint == 'settings.index' or request.endpoint == 'settings.profile_update' or request.endpoint == 'settings.password_change') %}active{% endif %}">
+      <i class="bi bi-sliders2 item-icon"></i><span>환경설정</span>
+    </a>
+
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <a href="{{ url_for('settings.users_index') }}"
+       class="sidebar-item {% if request.endpoint and request.endpoint.startswith('settings.user') %}active{% endif %}">
+      <i class="bi bi-people item-icon"></i><span>사용자 관리</span>
+    </a>
+    {% endif %}
 
     <a href="{{ url_for('auth.logout') }}" class="sidebar-item sidebar-logout">
       <i class="bi bi-box-arrow-left item-icon"></i><span>로그아웃</span>

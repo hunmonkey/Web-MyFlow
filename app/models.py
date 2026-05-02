@@ -52,3 +52,27 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f"<User {self.username}>"
+
+
+class UserFormatSetting(db.Model):
+    __tablename__ = "user_format_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    date_format = db.Column(db.String(20), nullable=False, default="YYYY-MM-DD")
+    datetime_format = db.Column(db.String(30), nullable=False, default="YYYY-MM-DD HH:mm")
+    currency_symbol = db.Column(db.String(10), nullable=False, default="원")
+    number_grouping = db.Column(db.Boolean, nullable=False, default=True)
+    preferred_theme = db.Column(db.String(10), nullable=False, default="system")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    user = db.relationship("User", lazy="joined")

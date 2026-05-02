@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}사용자 관리{% endblock %}
+{% block page_title %}사용자 관리{% endblock %}
+
+{% block content %}
+<div class="cs-module-shell users-admin-shell">
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="glass-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-person-plus me-2"></i>사용자 추가</span>
+          <span class="small text-muted">현재 관리자 {{ admin_count }}명</span>
+        </div>
+        <div class="p-3">
+          <form method="post" action="{{ url_for('settings.user_add') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-12 col-md-3">
+              <label class="form-label">아이디</label>
+              <input type="text" name="username" class="form-control cs-input" required maxlength="30" placeholder="영문/숫자/._-">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">표시 이름</label>
+              <input type="text" name="display_name" class="form-control cs-input" maxlength="100" placeholder="예: 재훈">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">초기 비밀번호</label>
+              <input type="password" name="password" class="form-control cs-input" required minlength="10" placeholder="최소 10자">
+            </div>
+            <div class="col-6 col-md-1">
+              <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" id="addAdmin" name="is_admin">
+                <label class="form-check-label" for="addAdmin">관리자</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-1">
+              <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" id="addActive" name="is_active" checked>
+                <label class="form-check-label" for="addActive">활성</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-1">
+              <button type="submit" class="btn btn-primary btn-sm w-100">
+                <i class="bi bi-plus-lg me-1"></i>추가
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="glass-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-people me-2"></i>사용자 목록</span>
+          <span class="small text-muted">총 {{ users|length }}명</span>
+        </div>
+        <div class="p-3">
+          <div class="row g-3">
+            {% for u in users %}
+            <div class="col-12">
+              <div class="glass-card p-3">
+                <form method="post" action="{{ url_for('settings.user_edit', uid=u.id) }}" class="row g-2 align-items-end">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <div class="col-12 col-md-2">
+                    <label class="form-label">아이디</label>
+                    <div class="form-control cs-input bg-body-tertiary">{{ u.username }}</div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label">표시 이름</label>
+                    <input type="text" name="display_name" class="form-control cs-input" value="{{ u.display_name }}" maxlength="100">
+                  </div>
+                  <div class="col-6 col-md-1">
+                    <div class="form-check mt-4">
+                      <input class="form-check-input" type="checkbox" name="is_admin" id="admin-{{ u.id }}" {% if u.is_admin %}checked{% endif %} {% if u.id == current_user.id and admin_count <= 1 %}disabled{% endif %}>
+                      <label class="form-check-label" for="admin-{{ u.id }}">관리자</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-1">
+                    <div class="form-check mt-4">
+                      <input class="form-check-input" type="checkbox" name="is_active" id="active-{{ u.id }}" {% if u.is_active %}checked{% endif %} {% if u.id == current_user.id %}disabled{% endif %}>
+                      <label class="form-check-label" for="active-{{ u.id }}">활성</label>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label">비밀번호 재설정(선택)</label>
+                    <input type="password" name="reset_password" class="form-control cs-input" minlength="10" placeholder="입력 시 변경">
+                  </div>
+                  <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary flex-fill">저장</button>
+                    {% if u.id != current_user.id %}
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-danger"
+                            formaction="{{ url_for('settings.user_delete', uid=u.id) }}"
+                            formmethod="post"
+                            onclick="return confirm('사용자 {{ u.username }} 를 삭제하시겠습니까?')"
+                            {% if u.is_admin and admin_count <= 1 %}disabled{% endif %}>
+                      삭제
+                    </button>
+                    {% else %}
+                    <span class="small text-muted d-flex align-items-center">현재 계정</span>
+                    {% endif %}
+                  </div>
+                </form>
+              </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center text-muted py-4">등록된 사용자가 없습니다.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

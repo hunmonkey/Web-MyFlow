@@ -3,10 +3,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, g
+from flask_login import current_user
 
 from config import config_map
 from app.extensions import db, login_manager, csrf
-from app.models import Profile, Project, User
+from app.models import Profile, Project, User, UserFormatSetting
 
 _WEAK_SECRET_KEY_VALUES = {
     "",
@@ -110,14 +111,24 @@ def create_app(env_name: str | None = None) -> Flask:
     from app.routes import main_bp
     from app.routes_personal import personal_bp
     from app.routes_auth import auth_bp
+    from app.routes_settings import settings_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(personal_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(settings_bp)
 
     @app.context_processor
     def inject_csp_nonce():
-        return {"csp_nonce": getattr(g, "csp_nonce", "")}
+        preferred_theme = "system"
+        if current_user.is_authenticated:
+            row = UserFormatSetting.query.filter_by(user_id=int(current_user.id)).first()
+            if row and row.preferred_theme in {"system", "light", "dark"}:
+                preferred_theme = row.preferred_theme
+        return {
+            "csp_nonce": getattr(g, "csp_nonce", ""),
+            "preferred_theme": preferred_theme,
+        }
 
     with app.app_context():
         if _is_truthy(os.environ.get("AUTO_DB_CREATE", "1")):

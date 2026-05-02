@@ -65,10 +65,11 @@ def _coming_soon(message: str = "이 기능은 다음 단계에서 연결할 예
 
 @personal_bp.app_context_processor
 def _inject_personal_helpers():
+    is_admin_user = bool(getattr(current_user, "is_admin", False))
     return {
         "can_write": lambda _name=None: True,
         "can_read": lambda _name=None: True,
-        "_is_admin": True,
+        "_is_admin": is_admin_user,
     }
 
 

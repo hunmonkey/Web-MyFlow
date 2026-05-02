@@ -199,7 +199,8 @@
 
     <!-- 페이지 본문 -->
     <div class="cs-content">
-      <div id="csPageShell" class="cs-page-shell">
+      <div id="csViewportFit" class="cs-viewport-fit">
+        <div id="csPageShell" class="cs-page-shell">
         {% set page_title_block %}{% block page_title %}{% endblock %}{% endset %}
         {% set resolved_page_title = page_title_block | trim or '개인 상황판' %}
         {% set page_actions_block %}{% block page_actions %}{% endblock %}{% endset %}
@@ -277,6 +278,7 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
+        </div>
       </div>
     </div>
 
@@ -549,12 +551,60 @@
       }
     };
 
+    const initViewportFit = () => {
+      const shell = document.getElementById("csPageShell");
+      const fitWrap = document.getElementById("csViewportFit");
+      if (!shell || !fitWrap) return;
+
+      let frameId = 0;
+
+      const applyFit = () => {
+        frameId = 0;
+
+        shell.style.setProperty("--cs-page-fit-scale", "1");
+
+        const availableWidth = fitWrap.clientWidth || 0;
+        const availableHeight = fitWrap.clientHeight || 0;
+        if (availableWidth <= 0 || availableHeight <= 0) return;
+
+        const naturalWidth = shell.scrollWidth || availableWidth;
+        const naturalHeight = shell.scrollHeight || availableHeight;
+        if (naturalWidth <= 0 || naturalHeight <= 0) return;
+
+        const widthRatio = availableWidth / naturalWidth;
+        const heightRatio = availableHeight / naturalHeight;
+        const nextScale = Math.min(1, widthRatio, heightRatio);
+        const safeScale = Math.max(0.35, Number.isFinite(nextScale) ? nextScale : 1);
+
+        shell.style.setProperty("--cs-page-fit-scale", safeScale.toFixed(4));
+      };
+
+      const scheduleFit = () => {
+        if (frameId) cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(applyFit);
+      };
+
+      scheduleFit();
+      window.addEventListener("load", scheduleFit);
+      window.addEventListener("resize", scheduleFit);
+      document.addEventListener("cs:theme-changed", scheduleFit);
+      window.setTimeout(scheduleFit, 120);
+      window.setTimeout(scheduleFit, 360);
+
+      if (window.ResizeObserver) {
+        const observer = new ResizeObserver(scheduleFit);
+        observer.observe(shell);
+        observer.observe(fitWrap);
+      }
+    };
+
     const start = () => {
       renderHeaderDateTime();
       if (window.__csHeaderClockTimer) clearInterval(window.__csHeaderClockTimer);
       window.__csHeaderClockTimer = setInterval(renderHeaderDateTime, 30000);
       initHeaderSearch();
       initHeaderButtons();
+      initViewportFit();
     };
 
     if (document.readyState === "loading") {

@@ -10313,3 +10313,45 @@ html[data-cs-theme="light"] .medical-assets-mobile-card__title,
 html[data-cs-theme="light"] .medical-assets-mobile-card__value {
   color: var(--color-text-main) !important;
 }
+
+/* ══════════════════════════════════════════════════════════
+   화면 1장 맞춤 모드 (전체 페이지 자동 축소)
+   목적:
+   - 페이지 전체를 브라우저 1화면 안에 맞춘다.
+   - 문서 스크롤 대신 비율 축소로 가시성을 유지한다.
+   ══════════════════════════════════════════════════════════ */
+html,
+body {
+  overflow: hidden !important;
+}
+
+.cs-layout,
+.cs-main {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow: hidden;
+}
+
+.cs-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cs-viewport-fit {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cs-page-shell {
+  --cs-page-fit-scale: 1;
+  transform-origin: top left;
+  transform: scale(var(--cs-page-fit-scale));
+  width: calc(100% / var(--cs-page-fit-scale));
+  min-height: 0;
+}

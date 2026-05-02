@@ -18,7 +18,7 @@
 
 1. `.env` 만들기
 ```bash
-cd /workspace/dev_codeserver_Personal
+cd /workspace/dev_codeserver_MyFlow
 ./scripts/setup_env.sh
 ```
 
@@ -45,7 +45,7 @@ docker inspect --format '{{.State.Health.Status}}' Web-MyFlow
 아래 스크립트는 `docker compose up -d --build`와 상태 확인을 한 번에 실행합니다.
 
 ```bash
-cd /workspace/dev_codeserver_Personal
+cd /workspace/dev_codeserver_MyFlow
 ./scripts/deploy_personal.sh
 ```
 
@@ -60,4 +60,4 @@ cd /workspace/dev_codeserver_Personal
 ## 5. 중요한 원칙
 
 - `Banana` 폴더(`/workspace/dev_codeserver_Banana`)는 **참고 전용**입니다.
-- 이 프로젝트(`dev_codeserver_Personal`)에서만 수정/배포 작업을 진행합니다.
+- 이 프로젝트(`dev_codeserver_MyFlow`)에서만 수정/배포 작업을 진행합니다.

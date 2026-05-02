@@ -109,12 +109,13 @@ def create_app(env_name: str | None = None) -> Flask:
         return User.query.get(int(user_id))
 
     from app.routes import main_bp
-    from app.routes_personal import personal_bp
+    from app.routes_personal import api_bp, personal_bp
     from app.routes_auth import auth_bp
     from app.routes_settings import settings_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(personal_bp)
+    app.register_blueprint(api_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(settings_bp)
 

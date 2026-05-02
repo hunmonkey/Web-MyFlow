@@ -92,3 +92,103 @@ class BackupSchedule(db.Model):
     updated_at = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+class FinanceTransaction(db.Model):
+    __tablename__ = "finance_transactions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    transaction_date = db.Column(db.Date, nullable=False, index=True)
+    transaction_type = db.Column(db.String(10), nullable=False)  # income | expense
+    title = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(80), nullable=False, default="기타")
+    payment_method = db.Column(db.String(50), nullable=False, default="현금")
+    memo = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User", lazy="joined")
+
+
+class PersonalSubscription(db.Model):
+    __tablename__ = "personal_subscriptions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    service_name = db.Column(db.String(120), nullable=False)
+    billing_amount = db.Column(db.Integer, nullable=False, default=0)
+    billing_cycle = db.Column(db.String(20), nullable=False, default="monthly")
+    next_billing_date = db.Column(db.Date, nullable=True, index=True)
+    payment_method = db.Column(db.String(50), nullable=False, default="카드")
+    category = db.Column(db.String(60), nullable=False, default="기타")
+    notes = db.Column(db.String(300), nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    user = db.relationship("User", lazy="joined")
+
+
+class HealthLog(db.Model):
+    __tablename__ = "health_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    log_date = db.Column(db.Date, nullable=False, index=True)
+    log_time = db.Column(db.String(5), nullable=True)
+    weight = db.Column(db.Float, nullable=True)
+    blood_sugar = db.Column(db.Integer, nullable=True)
+    blood_pressure_systolic = db.Column(db.Integer, nullable=True)
+    blood_pressure_diastolic = db.Column(db.Integer, nullable=True)
+    meds_taken = db.Column(db.Boolean, nullable=False, default=False)
+    meds_name = db.Column(db.String(200), nullable=True)
+    memo = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    user = db.relationship("User", lazy="joined")
+
+
+class PersonalSchedule(db.Model):
+    __tablename__ = "personal_schedules"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title = db.Column(db.String(200), nullable=False)
+    start_at = db.Column(db.DateTime, nullable=False, index=True)
+    end_at = db.Column(db.DateTime, nullable=True)
+    all_day = db.Column(db.Boolean, nullable=False, default=False)
+    category = db.Column(db.String(30), nullable=False, default="personal")
+    color = db.Column(db.String(20), nullable=False, default="#0d6efd")
+    description = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    user = db.relationship("User", lazy="joined")

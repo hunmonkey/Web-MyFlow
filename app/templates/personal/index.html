@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}개인 상황판{% endblock %}
-{% block page_title %}개인 상황판{% endblock %}
+{% block title %}상황판{% endblock %}
+{% block page_title %}상황판{% endblock %}
 
 {% macro compact_won(amount) -%}
   {% set raw_value = (amount or 0)|int %}
@@ -16,421 +16,255 @@
 
 {% block extra_css %}
 <style nonce="{{ csp_nonce }}">
-.cs-personal-dashboard {
-  gap: 0.72rem;
+.cs-dashboard-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.cs-personal-dashboard .cs-module-hero {
-  padding: 0.78rem 0.86rem;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(12, 14, 18, 0.58);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 22px rgba(0, 0, 0, 0.28);
-}
-
-.cs-personal-dashboard .cs-module-hero::before {
-  top: -22%;
-  right: -6%;
-  width: 12rem;
-  height: 12rem;
-  opacity: 0.16;
-}
-
-.cs-personal-dashboard .cs-module-hero::after {
-  bottom: -48%;
-  width: 16rem;
-  height: 12rem;
-  opacity: 0.08;
-}
-
-.cs-personal-dashboard .cs-module-hero__grid {
-  grid-template-columns: minmax(0, 1.4fr) minmax(13rem, 0.9fr);
-  gap: 0.65rem;
-  align-items: center;
-}
-
-.cs-personal-dashboard .cs-module-chip-group {
-  gap: 0.45rem;
-  margin-top: 0.52rem;
-}
-
-.cs-personal-dashboard .cs-module-chip {
-  gap: 0.48rem;
-  padding: 0.42rem 0.66rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(16, 18, 23, 0.78);
-}
-
-.cs-personal-dashboard .cs-module-chip strong {
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
-.cs-personal-dashboard .cs-module-chip span {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.cs-personal-dashboard .cs-module-side {
-  gap: 0.5rem;
-}
-
-.cs-personal-dashboard .cs-module-side .btn {
-  min-height: 34px;
-  padding: 0.28rem 0.62rem;
-  font-size: 0.74rem;
-  border-radius: 10px;
-}
-
-.cs-personal-dashboard .cs-metric-grid {
-  gap: 0.62rem;
+.cs-dashboard-summary {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
-.cs-personal-dashboard .cs-metric-card {
-  min-width: 0;
-  min-height: 7.9rem;
-  padding: 0.72rem 0.8rem;
+.cs-dashboard-summary .cs-summary-card {
+  border: 1px solid var(--cs-border);
   border-radius: 12px;
-  background: rgba(20, 22, 28, 0.56);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 22px rgba(0, 0, 0, 0.28);
+  background: var(--cs-surface);
+  padding: 0.78rem 0.84rem;
 }
 
-.cs-personal-dashboard .cs-metric-head {
-  gap: 0.5rem;
+.cs-dashboard-summary .cs-summary-label {
+  font-size: 0.78rem;
+  color: var(--cs-text-secondary);
+  margin-bottom: 0.32rem;
 }
 
-.cs-personal-dashboard .cs-metric-label {
-  font-size: 0.95rem;
-  font-weight: 700;
+.cs-dashboard-summary .cs-summary-value {
+  font-size: clamp(1.04rem, 1.6vw, 1.35rem);
+  font-weight: 800;
   line-height: 1.2;
 }
 
-.cs-personal-dashboard .cs-metric-icon {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 10px;
-  font-size: 0.88rem;
+.cs-dashboard-modules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
-.cs-personal-dashboard .cs-metric-value {
-  font-size: clamp(1.2rem, 2vw, 2.05rem);
-  line-height: 1;
+.cs-module-card {
+  border-radius: 14px;
+}
+
+.cs-module-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.cs-module-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--cs-text-primary);
+}
+
+.cs-module-title i {
+  color: var(--cs-primary);
+}
+
+.cs-module-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  row-gap: 0.42rem;
+  column-gap: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.cs-module-meta dt {
+  margin: 0;
+  color: var(--cs-text-secondary);
+  font-weight: 600;
+}
+
+.cs-module-meta dd {
+  margin: 0;
+  text-align: right;
+  color: var(--cs-text-primary);
+  font-weight: 700;
   word-break: keep-all;
 }
 
-.cs-personal-dashboard .cs-metric-subvalue {
-  margin-top: 0.38rem;
-  font-size: 0.7rem;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.62);
+.cs-module-note {
+  margin-top: 0.58rem;
+  padding-top: 0.58rem;
+  border-top: 1px dashed var(--cs-border);
+  font-size: 0.74rem;
+  color: var(--cs-text-secondary);
 }
 
-.cs-personal-dashboard .cs-module-chip {
-  min-width: 0;
-}
-
-.cs-personal-dashboard .cs-module-chip strong {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  word-break: keep-all;
-}
-
-.cs-personal-dashboard .glass-card .card-header {
-  padding: 0.68rem 0.82rem;
-  font-size: 0.78rem;
-}
-
-.cs-personal-dashboard .glass-card .card-body {
-  padding: 0.82rem;
-}
-
-.cs-personal-dashboard .cs-link-item {
-  padding: 0.7rem 0.78rem;
-  border-radius: 12px;
-}
-
-.cs-personal-dashboard .cs-link-icon {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 11px;
-}
-
-.cs-personal-dashboard .cs-link-title {
-  font-size: 0.94rem;
-}
-
-.cs-personal-dashboard .table {
-  font-size: 0.76rem;
-}
-
-.cs-personal-dashboard .table th {
-  font-size: 0.68rem;
-  letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.cs-personal-dashboard .table th,
-.cs-personal-dashboard .table td {
-  padding: 0.5rem 0.65rem;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.cs-personal-dashboard .cs-empty-panel {
-  min-height: 190px;
-}
-
-@media (max-width: 1199.98px) {
-  .cs-personal-dashboard .cs-module-hero__grid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(12rem, 0.9fr);
-  }
+.cs-module-locked {
+  border: 1px solid var(--cs-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.52rem;
+  font-size: 0.72rem;
+  color: var(--cs-text-secondary);
+  background: color-mix(in srgb, var(--cs-surface-soft) 86%, transparent);
 }
 
 @media (max-width: 991.98px) {
-  .cs-personal-dashboard .cs-module-hero__grid {
-    grid-template-columns: 1fr;
-    gap: 0.58rem;
-  }
-
-  .cs-personal-dashboard .cs-metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 575.98px) {
-  .cs-personal-dashboard .cs-metric-grid {
+  .cs-dashboard-summary {
     grid-template-columns: 1fr;
   }
 
-  .cs-personal-dashboard .cs-module-chip {
-    width: 100%;
-    justify-content: space-between;
+  .cs-dashboard-modules {
+    grid-template-columns: 1fr;
   }
-}
-
-/* 라이트 테마 오버라이드 — 다크 반투명 배경을 화이트 감도로 */
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-hero {
-  border: 1px solid var(--cs-border);
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.05);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-chip {
-  border: 1px solid var(--cs-border);
-  background: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-chip span {
-  color: var(--cs-text-secondary);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-metric-card {
-  border: 1px solid var(--cs-border);
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 18px rgba(15, 23, 42, 0.05);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-metric-subvalue {
-  color: var(--cs-text-secondary);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .table th {
-  color: var(--cs-text-secondary);
-  border-color: var(--cs-border);
-}
-
-html[data-cs-theme="light"] .cs-personal-dashboard .table th,
-html[data-cs-theme="light"] .cs-personal-dashboard .table td {
-  border-color: var(--cs-border);
-}
-/* 라이트 테마 오버라이드 */
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-hero {
-  border: 1px solid var(--cs-border);
-}
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-chip {
-  border: 1px solid var(--cs-border);
-}
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-module-chip span {
-  color: #334155;
-}
-html[data-cs-theme="light"] .cs-personal-dashboard .cs-metric-subvalue {
-  color: #334155;
-}
-html[data-cs-theme="light"] .cs-personal-dashboard .table th {
-  color: #334155;
-}
-html[data-cs-theme="light"] .cs-personal-dashboard .table th,
-html[data-cs-theme="light"] .cs-personal-dashboard .table td {
-  border-color: var(--cs-border);
 }
 </style>
 {% endblock %}
 
 {% block content %}
-{% set balance = monthly_income - monthly_expense %}
+{% set balance = finance_summary.balance %}
 {% set can_finance = _is_admin or can_read('personal.finance') %}
 {% set can_calendar = _is_admin or can_read('personal.calendar') %}
 {% set can_subscription = _is_admin or can_read('personal.subscriptions') %}
 {% set can_health = _is_admin or can_read('personal.health') %}
 {% set can_gallery = _is_admin or can_read('personal.gallery') %}
+{% set can_settings = _is_admin or can_read('settings.index') %}
 
-<div class="cs-module-shell cs-personal-dashboard">
-  <section class="glass-card cs-module-hero" style="--cs-hero-accent:{{ health_alert.color }};">
-    <div class="cs-module-hero__grid">
-      <div>
-        <div class="cs-module-chip-group">
-          <div class="cs-module-chip" style="--cs-chip-color:var(--bs-success);">
-            <strong title="{{ '{:,.0f}'.format(monthly_income) }}원">{{ compact_won(monthly_income) }}</strong>
-            <span>이번 달 수입</span>
-          </div>
-          <div class="cs-module-chip" style="--cs-chip-color:var(--bs-danger);">
-            <strong title="{{ '{:,.0f}'.format(monthly_expense) }}원">{{ compact_won(monthly_expense) }}</strong>
-            <span>이번 달 지출</span>
-          </div>
-          <div class="cs-module-chip" style="--cs-chip-color:{{ health_alert.color }};">
-            <strong>{{ health_alert.title }}</strong>
-            <span>건강 알림</span>
-          </div>
-        </div>
-      </div>
-      <div class="cs-module-side">
-        {% if can_health %}
-        <a href="{{ url_for('personal.health') }}" class="btn btn-outline-info btn-sm">
-          <i class="bi bi-activity me-1"></i>건강 일지 열기
-        </a>
-        {% endif %}
+<div class="cs-module-shell cs-dashboard-overview">
+  <div class="cs-dashboard-summary">
+    <div class="cs-summary-card">
+      <div class="cs-summary-label">이번 달 수입</div>
+      <div class="cs-summary-value text-success">{{ compact_won(monthly_income) }}</div>
+    </div>
+    <div class="cs-summary-card">
+      <div class="cs-summary-label">이번 달 지출</div>
+      <div class="cs-summary-value text-danger">{{ compact_won(monthly_expense) }}</div>
+    </div>
+    <div class="cs-summary-card">
+      <div class="cs-summary-label">잔액</div>
+      <div class="cs-summary-value {{ 'text-success' if balance >= 0 else 'text-danger' }}">
+        {{ compact_won(balance) }}
       </div>
     </div>
-  </section>
-
-  <div class="cs-metric-grid">
-    {% for icon, label, raw_amount, color in [
-      ('bi-arrow-down-circle-fill', '이번 달 수입', monthly_income, 'var(--bs-success)'),
-      ('bi-arrow-up-circle-fill', '이번 달 지출', monthly_expense, 'var(--bs-danger)'),
-      ('bi-piggy-bank-fill', '잔액', balance|abs, 'var(--bs-success)' if balance >= 0 else 'var(--bs-danger)'),
-    ] %}
-    {% set full_value = '{:,.0f}'.format(raw_amount) ~ '원' %}
-    {% set display_value = compact_won(raw_amount) %}
-    <div class="cs-metric-card" style="--cs-accent-color:{{ color }};">
-      <div class="cs-metric-head">
-        <div>
-          <div class="cs-metric-label">{{ label }}</div>
-        </div>
-        <div class="cs-metric-icon">
-          <i class="bi {{ icon }}"></i>
-        </div>
-      </div>
-      <div class="cs-metric-value" title="{{ full_value }}">{{ display_value }}</div>
-      {% if display_value != full_value %}
-      <div class="cs-metric-subvalue">전체 금액 {{ full_value }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
   </div>
 
-  <div class="row g-3">
-    <div class="col-12 col-lg-5">
-      <div class="glass-card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-grid-1x2 me-2 text-primary"></i>개인 메뉴</span>
-        </div>
-        <div class="card-body p-3">
-          <div class="cs-link-list">
-            {% set menu_ns = namespace(has_items=false) %}
-            {% for icon, label, href, color, allowed in [
-              ('bi-wallet2', '가계부', url_for('personal.finance'), 'var(--bs-warning)', can_finance),
-              ('bi-calendar3', '캘린더', url_for('personal.calendar'), 'var(--bs-primary)', can_calendar),
-              ('bi-credit-card', '구독 관리', url_for('personal.subscriptions'), 'var(--bs-info)', can_subscription),
-              ('bi-heart-pulse', '건강 일지', url_for('personal.health'), '#ff375f', can_health),
-              ('bi-images', '갤러리', url_for('personal.gallery'), 'var(--bs-purple, var(--bs-indigo))', can_gallery),
-            ] %}
-            {% if allowed %}
-            {% set menu_ns.has_items = true %}
-            <a href="{{ href }}" class="cs-link-item" style="--cs-accent-color:{{ color }};">
-              <div class="cs-link-icon"><i class="bi {{ icon }}"></i></div>
-              <div class="cs-link-body">
-                <span class="cs-link-title">{{ label }}</span>
-              </div>
-              <span class="cs-link-arrow"><i class="bi bi-chevron-right"></i></span>
-            </a>
-            {% endif %}
-            {% endfor %}
-            {% if not menu_ns.has_items %}
-            <div class="cs-empty-panel">
-              <i class="bi bi-door-closed"></i>
-              <div>현재 권한으로는 개인 메뉴를 표시할 수 없습니다.</div>
-            </div>
-            {% endif %}
-          </div>
-        </div>
+  <div class="cs-dashboard-modules">
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-wallet2"></i>가계부</span>
+        {% if can_finance %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.finance') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>이번 달 수입</dt><dd>{{ compact_won(monthly_income) }}</dd>
+          <dt>이번 달 지출</dt><dd>{{ compact_won(monthly_expense) }}</dd>
+          <dt>잔액</dt><dd>{{ compact_won(finance_summary.balance) }}</dd>
+          <dt>최근 거래</dt><dd>{{ finance_summary.recent_count }}건</dd>
+        </dl>
       </div>
     </div>
 
-    <div class="col-12 col-lg-7">
-      <div class="glass-card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-receipt me-2 text-warning"></i>최근 거래 내역</span>
-          {% if can_finance %}
-          <a class="cs-inline-action" href="{{ url_for('personal.finance') }}">전체 보기</a>
-          {% endif %}
-        </div>
-        <div class="card-body p-0">
-          {% if can_finance and recent_transactions %}
-          <div class="table-responsive">
-            <table class="table mb-0">
-              <thead>
-                <tr>
-                  <th>날짜</th>
-                  <th>항목</th>
-                  <th>분류</th>
-                  <th class="text-end">금액</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for t in recent_transactions %}
-                <tr>
-                  <td class="cs-inline-0329">{{ t.transaction_date.strftime('%m/%d') }}</td>
-                  <td class="cs-inline-0049">{{ t.title }}</td>
-                  <td>
-                    {% set tx_is_income = t.transaction_type == 'income' %}
-                    <span class="small px-2 py-1 rounded-pill fw-semibold border
-                        {{ 'text-bg-success-subtle text-success border-success-subtle' if tx_is_income else 'text-bg-danger-subtle text-danger border-danger-subtle' }}">
-                      {{ t.category or '기타' }}
-                    </span>
-                  </td>
-                  <td class="text-end fw-bold {{ 'text-success' if tx_is_income else 'text-danger' }}">
-                    {{ '+' if t.transaction_type=='income' else '-' }}{{ '{:,.0f}'.format(t.amount) }}원
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% elif can_finance %}
-          <div class="cs-empty-panel">
-            <i class="bi bi-inbox"></i>
-            <div>이번 달 거래 내역이 아직 없습니다.</div>
-            <a href="{{ url_for('personal.finance') }}" class="btn btn-sm btn-outline-primary">가계부 작성하기</a>
-          </div>
-          {% else %}
-          <div class="cs-empty-panel">
-            <i class="bi bi-lock"></i>
-            <div>가계부 권한이 없어 거래 내역은 숨겨져 있습니다.</div>
-          </div>
-          {% endif %}
-        </div>
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-calendar3"></i>캘린더</span>
+        {% if can_calendar %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.calendar') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>오늘</dt><dd>{{ calendar_summary.today_text }}</dd>
+          <dt>이번 주</dt><dd>{{ calendar_summary.week_range_text }}</dd>
+          <dt>일정 건수</dt><dd>{{ calendar_summary.event_count_text }}</dd>
+        </dl>
+        <div class="cs-module-note">일정 데이터 연결 단계가 끝나면 건수를 자동으로 표시합니다.</div>
+      </div>
+    </div>
+
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-credit-card"></i>구독</span>
+        {% if can_subscription %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.subscriptions') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>활성 구독</dt><dd>{{ subscription_summary.active_count }}건</dd>
+          <dt>일시정지</dt><dd>{{ subscription_summary.inactive_count }}건</dd>
+          <dt>월 예상 지출</dt><dd>{{ compact_won(subscription_summary.monthly_total) }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-heart-pulse"></i>건강</span>
+        {% if can_health %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.health') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>마지막 기록일</dt><dd>{{ health_summary.last_log_text }}</dd>
+          <dt>최근 30일 기록</dt><dd>{{ health_summary.month_record_count }}회</dd>
+          <dt>주의 알림</dt><dd>{{ health_summary.monthly_alert_count }}건</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-images"></i>갤러리</span>
+        {% if can_gallery %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.gallery') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>이미지</dt><dd>{{ gallery_summary.image_count }}장</dd>
+          <dt>분류</dt><dd>{{ gallery_summary.category_count }}개</dd>
+          <dt>최근 업로드</dt><dd>{{ gallery_summary.latest_upload_text }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="glass-card cs-module-card">
+      <div class="card-header">
+        <span class="cs-module-title"><i class="bi bi-gear"></i>환경설정</span>
+        {% if can_settings %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('settings.index') }}">열기</a>
+        {% else %}
+        <span class="cs-module-locked">권한 없음</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        <dl class="cs-module-meta">
+          <dt>표시 이름</dt><dd>{{ settings_summary.profile_name or '--' }}</dd>
+          <dt>기본 테마</dt><dd>{{ settings_summary.preferred_theme }}</dd>
+          <dt>자동 백업</dt><dd>{{ settings_summary.enabled_backup_count }}/{{ settings_summary.total_backup_count }} 사용</dd>
+          <dt>DB 백업</dt><dd>{{ settings_summary.db_schedule_text }}</dd>
+          <dt>일반자료 백업</dt><dd>{{ settings_summary.data_schedule_text }}</dd>
+        </dl>
       </div>
     </div>
   </div>

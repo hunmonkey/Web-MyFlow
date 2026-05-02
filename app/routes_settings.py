@@ -36,7 +36,6 @@ DATETIME_FORMAT_OPTIONS = {
     "MM/DD/YYYY hh:mm A": "%m/%d/%Y %I:%M %p",
 }
 CURRENCY_SYMBOL_OPTIONS = {"원", "₩", "KRW"}
-THEME_OPTIONS = {"system", "light", "dark"}
 
 
 @settings_bp.before_request
@@ -223,7 +222,6 @@ def formats_index():
         next_date_format = (request.form.get("date_format") or "").strip()
         next_datetime_format = (request.form.get("datetime_format") or "").strip()
         next_currency_symbol = (request.form.get("currency_symbol") or "").strip()
-        next_theme = (request.form.get("preferred_theme") or "").strip().lower()
 
         if next_date_format not in DATE_FORMAT_OPTIONS:
             flash("날짜 표시 형식이 올바르지 않습니다.", "warning")
@@ -234,15 +232,11 @@ def formats_index():
         if next_currency_symbol not in CURRENCY_SYMBOL_OPTIONS:
             flash("통화 표시 형식이 올바르지 않습니다.", "warning")
             return redirect(url_for("settings.formats_index"))
-        if next_theme not in THEME_OPTIONS:
-            flash("테마 기본값이 올바르지 않습니다.", "warning")
-            return redirect(url_for("settings.formats_index"))
 
         setting.date_format = next_date_format
         setting.datetime_format = next_datetime_format
         setting.currency_symbol = next_currency_symbol
         setting.number_grouping = _is_truthy(request.form.get("number_grouping"))
-        setting.preferred_theme = next_theme
         db.session.commit()
 
         flash("사용자 서식설정을 저장했습니다.", "success")

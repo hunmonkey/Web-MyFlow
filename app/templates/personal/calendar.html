@@ -220,7 +220,7 @@ html[data-cs-theme="light"] .fc-event .fc-event-time {
 <div class="d-flex align-items-center gap-2 flex-wrap calendar-filter-row">
   <span class="cs-inline-0058">필터:</span>
   {% set cats = [('all', '전체', '#ffffff'), ('personal', '개인', '#0d6efd'), ('work', '업무', '#ff9f0a'), ('family', '가족', '#ff375f')] %}
-  {% if current_user.role == "admin" %}
+  {% if current_user.is_admin %}
   {% set cats = [('all', '전체', '#ffffff'), ('personal', '개인', '#0d6efd'), ('work', '업무', '#ff9f0a'), ('homelab', '홈랩', '#30d158'), ('family', '가족', '#ff375f')] %}
   {% endif %}
   {% for val, label, color in cats %}
@@ -282,7 +282,7 @@ html[data-cs-theme="light"] .fc-event .fc-event-time {
             <select id="scheduleCategory" class="form-select cs-input">
               <option value="personal">개인</option>
               <option value="work">업무</option>
-              {% if current_user.role == "admin" %}
+              {% if current_user.is_admin %}
               <option value="homelab">홈랩</option>
               {% endif %}
               <option value="family">가족</option>

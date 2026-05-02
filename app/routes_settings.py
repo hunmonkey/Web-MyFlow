@@ -11,14 +11,14 @@ from app.backup_service import (
     BACKUP_TYPE_DB,
     BACKUP_TYPE_LABELS,
     BACKUP_TYPES,
-    REPEAT_TYPE_DAILY,
-    REPEAT_TYPE_LABELS,
-    REPEAT_TYPE_WEEKLY,
-    WEEKDAY_LABELS,
+    WEEKDAY_OPTIONS,
     ensure_default_backup_schedules,
     normalize_backup_type,
+    normalize_weekday_mask,
     run_backup,
     validate_run_time,
+    weekday_mask_from_values,
+    weekday_mask_to_values,
 )
 from app.extensions import db
 from app.models import Profile, User, UserFormatSetting
@@ -76,14 +76,18 @@ def _get_or_create_user_format_setting(user_id: int) -> UserFormatSetting:
 def index():
     profile = Profile.query.order_by(Profile.id.asc()).first()
     backup_schedules = ensure_default_backup_schedules()
+    selected_weekdays = {
+        backup_type: set(weekday_mask_to_values(row.weekday))
+        for backup_type, row in backup_schedules.items()
+    }
     return render_template(
         "settings/index.html",
         profile=profile,
         backup_schedules=backup_schedules,
+        backup_selected_weekdays=selected_weekdays,
         backup_schedule_order=[BACKUP_TYPE_DB, BACKUP_TYPE_DATA],
         backup_type_labels=BACKUP_TYPE_LABELS,
-        repeat_type_labels=REPEAT_TYPE_LABELS,
-        weekday_labels=WEEKDAY_LABELS,
+        weekday_options=WEEKDAY_OPTIONS,
     )
 
 
@@ -172,34 +176,42 @@ def backup_schedule_update():
         flash("백업 종류가 올바르지 않습니다.", "warning")
         return redirect(url_for("settings.index"))
 
-    repeat_type = (request.form.get("repeat_type") or "").strip().lower()
-    if repeat_type not in {REPEAT_TYPE_DAILY, REPEAT_TYPE_WEEKLY}:
-        flash("반복 주기가 올바르지 않습니다.", "warning")
-        return redirect(url_for("settings.index"))
-
-    weekday_raw = (request.form.get("weekday") or "").strip()
-    try:
-        weekday = int(weekday_raw)
-    except ValueError:
-        weekday = -1
-    if weekday not in WEEKDAY_LABELS:
-        flash("요일 값이 올바르지 않습니다.", "warning")
-        return redirect(url_for("settings.index"))
+    selected_days: list[int] = []
+    for raw_value in request.form.getlist("weekdays"):
+        try:
+            day_value = int(str(raw_value).strip())
+        except ValueError:
+            continue
+        if 0 <= day_value <= 6:
+            selected_days.append(day_value)
 
     run_time = (request.form.get("run_time") or "").strip()
     if not validate_run_time(run_time):
         flash("시간 형식이 올바르지 않습니다. 예: 03:30", "warning")
         return redirect(url_for("settings.index"))
 
+    usage_action = (request.form.get("usage_action") or "").strip().lower()
+    if usage_action not in {"enable", "disable"}:
+        flash("사용 설정 값이 올바르지 않습니다.", "warning")
+        return redirect(url_for("settings.index"))
+
     schedules = ensure_default_backup_schedules()
     row = schedules[backup_type]
-    row.is_enabled = _is_truthy(request.form.get("is_enabled"))
-    row.repeat_type = repeat_type
-    row.weekday = weekday
+
+    weekday_mask = weekday_mask_from_values(selected_days)
+    if weekday_mask == 0:
+        if usage_action == "enable":
+            flash("요일을 1개 이상 선택해 주세요.", "warning")
+            return redirect(url_for("settings.index"))
+        weekday_mask = normalize_weekday_mask(row.weekday)
+
+    row.is_enabled = usage_action == "enable"
+    row.weekday = weekday_mask
     row.run_time = run_time
     db.session.commit()
 
-    flash(f"{BACKUP_TYPE_LABELS[backup_type]} 자동 백업 일정을 저장했습니다.", "success")
+    status_text = "사용" if row.is_enabled else "사용 안함"
+    flash(f"{BACKUP_TYPE_LABELS[backup_type]} 자동 백업 일정을 저장했습니다. ({status_text})", "success")
     return redirect(url_for("settings.index"))
 
 

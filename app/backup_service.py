@@ -24,13 +24,7 @@ BACKUP_TYPE_LABELS = {
     BACKUP_TYPE_DATA: "일반자료",
 }
 
-REPEAT_TYPE_DAILY = "daily"
-REPEAT_TYPE_WEEKLY = "weekly"
-REPEAT_TYPES = (REPEAT_TYPE_DAILY, REPEAT_TYPE_WEEKLY)
-REPEAT_TYPE_LABELS = {
-    REPEAT_TYPE_DAILY: "매일",
-    REPEAT_TYPE_WEEKLY: "매주",
-}
+SCHEDULE_FORMAT_MASK_V1 = "mask1"
 
 WEEKDAY_LABELS = {
     0: "월요일",
@@ -41,6 +35,26 @@ WEEKDAY_LABELS = {
     5: "토요일",
     6: "일요일",
 }
+WEEKDAY_SHORT_LABELS = {
+    0: "월",
+    1: "화",
+    2: "수",
+    3: "목",
+    4: "금",
+    5: "토",
+    6: "일",
+}
+WEEKDAY_OPTIONS = (
+    (6, "일"),
+    (0, "월"),
+    (1, "화"),
+    (2, "수"),
+    (3, "목"),
+    (4, "금"),
+    (5, "토"),
+)
+WEEKDAY_MASK_ALL = (1 << 7) - 1
+WEEKDAY_MASK_DEFAULT = 1 << 0  # 월요일
 
 _RUN_TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d\Z")
 
@@ -60,6 +74,68 @@ def parse_run_time(run_time: str) -> tuple[int, int] | None:
     return int(hour_text), int(minute_text)
 
 
+def normalize_weekday_mask(value: int | None) -> int:
+    try:
+        mask = int(value if value is not None else 0)
+    except (TypeError, ValueError):
+        return 0
+    if mask < 0:
+        return 0
+    return mask & WEEKDAY_MASK_ALL
+
+
+def weekday_mask_from_values(values: list[int]) -> int:
+    mask = 0
+    for value in values:
+        if 0 <= value <= 6:
+            mask |= 1 << value
+    return normalize_weekday_mask(mask)
+
+
+def weekday_mask_to_values(mask: int) -> list[int]:
+    normalized = normalize_weekday_mask(mask)
+    return [day for day in range(7) if normalized & (1 << day)]
+
+
+def is_weekday_selected(mask: int, day: int) -> bool:
+    if day < 0 or day > 6:
+        return False
+    return bool(normalize_weekday_mask(mask) & (1 << day))
+
+
+def _upgrade_schedule_format(row: BackupSchedule) -> bool:
+    repeat_type = str(row.repeat_type or "").strip().lower()
+    changed = False
+
+    if repeat_type == SCHEDULE_FORMAT_MASK_V1:
+        next_mask = normalize_weekday_mask(row.weekday)
+        if next_mask == 0:
+            next_mask = WEEKDAY_MASK_DEFAULT
+        if row.weekday != next_mask:
+            row.weekday = next_mask
+            changed = True
+        return changed
+
+    if repeat_type == "daily":
+        next_mask = WEEKDAY_MASK_ALL
+    elif repeat_type == "weekly":
+        try:
+            legacy_weekday = int(row.weekday)
+        except (TypeError, ValueError):
+            legacy_weekday = 0
+        if legacy_weekday < 0 or legacy_weekday > 6:
+            legacy_weekday = 0
+        next_mask = 1 << legacy_weekday
+    else:
+        next_mask = normalize_weekday_mask(row.weekday)
+        if next_mask == 0:
+            next_mask = WEEKDAY_MASK_DEFAULT
+
+    row.weekday = next_mask
+    row.repeat_type = SCHEDULE_FORMAT_MASK_V1
+    return True
+
+
 def ensure_default_backup_schedules() -> dict[str, BackupSchedule]:
     schedules: dict[str, BackupSchedule] = {}
     changed = False
@@ -70,11 +146,13 @@ def ensure_default_backup_schedules() -> dict[str, BackupSchedule]:
             row = BackupSchedule(
                 backup_type=backup_type,
                 is_enabled=False,
-                repeat_type=REPEAT_TYPE_WEEKLY,
-                weekday=0,
+                repeat_type=SCHEDULE_FORMAT_MASK_V1,
+                weekday=WEEKDAY_MASK_DEFAULT,
                 run_time="03:00",
             )
             db.session.add(row)
+            changed = True
+        elif _upgrade_schedule_format(row):
             changed = True
         schedules[backup_type] = row
 
@@ -96,13 +174,10 @@ def is_schedule_due(schedule: BackupSchedule, now: datetime) -> bool:
     if now.hour != run_hour or now.minute != run_minute:
         return False
 
-    repeat_type = str(schedule.repeat_type or "").strip().lower()
-    if repeat_type == REPEAT_TYPE_WEEKLY:
-        if schedule.weekday not in WEEKDAY_LABELS:
-            return False
-        if now.weekday() != int(schedule.weekday):
-            return False
-    elif repeat_type != REPEAT_TYPE_DAILY:
+    weekday_mask = normalize_weekday_mask(schedule.weekday)
+    if weekday_mask == 0:
+        return False
+    if not is_weekday_selected(weekday_mask, now.weekday()):
         return False
 
     last_run_at = schedule.last_run_at

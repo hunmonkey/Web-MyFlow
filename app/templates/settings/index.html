@@ -83,41 +83,53 @@
 
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <strong>{{ backup_type_labels[backup_type] }}</strong>
-                <div class="form-check form-switch m-0">
-                  <input class="form-check-input"
-                         type="checkbox"
-                         id="schedule_enabled_{{ backup_type }}"
-                         name="is_enabled"
-                         value="1"
-                         {% if row.is_enabled %}checked{% endif %}>
-                  <label class="form-check-label small" for="schedule_enabled_{{ backup_type }}">사용</label>
-                </div>
+                <span class="badge {% if row.is_enabled %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+                  {% if row.is_enabled %}사용중{% else %}사용안함{% endif %}
+                </span>
               </div>
 
               <div class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
-                  <label class="form-label small mb-1">반복</label>
-                  <select name="repeat_type" class="form-select form-select-sm">
-                    {% for key, label in repeat_type_labels.items() %}
-                    <option value="{{ key }}" {% if row.repeat_type == key %}selected{% endif %}>{{ label }}</option>
+                <div class="col-12">
+                  <label class="form-label small mb-1">요일 선택</label>
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for day_no, day_label in weekday_options %}
+                    <div class="form-check form-check-inline m-0">
+                      <input class="form-check-input schedule-day-checkbox"
+                             type="checkbox"
+                             id="weekday_{{ backup_type }}_{{ day_no }}"
+                             name="weekdays"
+                             value="{{ day_no }}"
+                             data-schedule-group="{{ backup_type }}"
+                             {% if day_no in backup_selected_weekdays[backup_type] %}checked{% endif %}>
+                      <label class="form-check-label small" for="weekday_{{ backup_type }}_{{ day_no }}">{{ day_label }}</label>
+                    </div>
                     {% endfor %}
-                  </select>
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small mb-1">요일</label>
-                  <select name="weekday" class="form-select form-select-sm">
-                    {% for day_no, day_label in weekday_labels.items() %}
-                    <option value="{{ day_no }}" {% if row.weekday == day_no %}selected{% endif %}>{{ day_label }}</option>
-                    {% endfor %}
-                  </select>
+                  </div>
+                  <div class="d-flex gap-2 mt-2">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            data-schedule-action="select-all"
+                            data-schedule-group="{{ backup_type }}">
+                      모두선택
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            data-schedule-action="clear-all"
+                            data-schedule-group="{{ backup_type }}">
+                      모두지우기
+                    </button>
+                  </div>
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label small mb-1">시간</label>
                   <input type="time" name="run_time" class="form-control form-control-sm" value="{{ row.run_time }}" required>
                 </div>
-                <div class="col-12">
-                  <button type="submit" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-save me-1"></i>자동 스케줄 저장
+                <div class="col-12 d-flex flex-wrap gap-2">
+                  <button type="submit" name="usage_action" value="enable" class="btn btn-primary btn-sm">
+                    <i class="bi bi-check2-circle me-1"></i>백업 사용
+                  </button>
+                  <button type="submit" name="usage_action" value="disable" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-slash-circle me-1"></i>사용안함
                   </button>
                 </div>
               </div>
@@ -173,4 +185,25 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function(){
+  function setWeekdays(group, checked) {
+    document.querySelectorAll('.schedule-day-checkbox[data-schedule-group="' + group + '"]')
+      .forEach(function(el){ el.checked = checked; });
+  }
+
+  document.querySelectorAll('[data-schedule-action]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var action = btn.getAttribute('data-schedule-action');
+      var group = btn.getAttribute('data-schedule-group');
+      if (!group) return;
+      if (action === 'select-all') setWeekdays(group, true);
+      if (action === 'clear-all') setWeekdays(group, false);
+    });
+  });
+})();
+</script>
 {% endblock %}

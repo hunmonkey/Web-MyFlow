@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="ko" data-bs-theme="light">
+<html lang="ko" data-bs-theme="light" data-cs-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}{{ site_title }}{% endblock %}</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <link
       rel="stylesheet"
@@ -23,19 +36,32 @@
     {% block extra_css %}{% endblock %}
   </head>
   <body>
-    <header class="container py-3">
+    <header class="site-topbar container py-3">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <a class="fw-bold text-decoration-none" href="{{ url_for('main.home') }}">
+        <a class="site-brand fw-bold text-decoration-none" href="{{ url_for('main.home') }}">
           Watermelon Personal
         </a>
         <div class="d-flex gap-2">
+          <button id="csThemeToggle" class="btn btn-sm btn-outline-dark" type="button" aria-label="테마 전환">
+            <i class="bi bi-circle-half"></i>
+          </button>
           <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.home') }}">기본 홈</a>
           <a class="btn btn-sm btn-outline-primary" href="{{ url_for('personal.index') }}">개인 상황판</a>
         </div>
       </div>
+      {% if request.blueprint == "personal" %}
+      <nav class="personal-top-nav" aria-label="개인 메뉴">
+        <a href="{{ url_for('personal.index') }}" class="{% if request.endpoint == 'personal.index' %}is-active{% endif %}">상황판</a>
+        <a href="{{ url_for('personal.finance') }}" class="{% if request.endpoint and request.endpoint.startswith('personal.finance') or request.endpoint and request.endpoint.startswith('personal.loan') or request.endpoint and request.endpoint.startswith('personal.payment_account') %}is-active{% endif %}">가계부</a>
+        <a href="{{ url_for('personal.calendar') }}" class="{% if request.endpoint == 'personal.calendar' %}is-active{% endif %}">캘린더</a>
+        <a href="{{ url_for('personal.subscriptions') }}" class="{% if request.endpoint and request.endpoint.startswith('personal.subscription') %}is-active{% endif %}">구독</a>
+        <a href="{{ url_for('personal.health') }}" class="{% if request.endpoint and request.endpoint.startswith('personal.health') %}is-active{% endif %}">건강</a>
+        <a href="{{ url_for('personal.gallery') }}" class="{% if request.endpoint and request.endpoint.startswith('personal.gallery') %}is-active{% endif %}">갤러리</a>
+      </nav>
+      {% endif %}
     </header>
 
-    <main class="container pb-4">
+    <main class="container pb-4 site-main {% if request.blueprint == 'personal' %}site-main-personal{% endif %}">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="mb-3">
@@ -67,6 +93,45 @@
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <script>
+      (() => {
+        const html = document.documentElement;
+        const storedTheme = localStorage.getItem("personal_theme");
+        if (storedTheme === "dark" || storedTheme === "light") {
+          html.setAttribute("data-cs-theme", storedTheme);
+          html.setAttribute("data-bs-theme", storedTheme);
+        }
+
+        document.getElementById("csThemeToggle")?.addEventListener("click", () => {
+          const now = html.getAttribute("data-cs-theme") === "dark" ? "dark" : "light";
+          const next = now === "dark" ? "light" : "dark";
+          html.setAttribute("data-cs-theme", next);
+          html.setAttribute("data-bs-theme", next);
+          localStorage.setItem("personal_theme", next);
+        });
+
+        window.csMoneyText = window.csMoneyText || ((value) => {
+          return Number(value || 0).toLocaleString("ko-KR") + "원";
+        });
+
+        window.csFilterRules = window.csFilterRules || {
+          bindFilterButtons({ buttons = [], defaultValue = "all", onChange, triggerOnInit = true }) {
+            const list = Array.from(buttons || []);
+            if (!list.length) return;
+            const apply = (value) => {
+              list.forEach((btn) => {
+                btn.classList.toggle("active", (btn.dataset.filter || defaultValue) === value);
+              });
+              if (typeof onChange === "function") onChange(value);
+            };
+            list.forEach((btn) => {
+              btn.addEventListener("click", () => apply(btn.dataset.filter || defaultValue));
+            });
+            if (triggerOnInit) apply(defaultValue);
+          },
+        };
+      })();
+    </script>
     {% block extra_js %}{% endblock %}
   </body>
 </html>

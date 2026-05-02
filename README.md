@@ -49,6 +49,10 @@ cd /workspace/dev_codeserver_MyFlow
 ./scripts/deploy_personal.sh
 ```
 
+자동 백업 스케줄:
+- 사이트 `환경설정` 페이지에서 DB/일반자료 자동 백업의 요일·시간을 설정할 수 있습니다.
+- 스케줄 실행은 `backup-scheduler` 컨테이너가 담당합니다.
+
 ## 4. 폴더 역할
 
 - `app/`: 실제 사이트 코드

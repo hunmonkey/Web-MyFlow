@@ -37,6 +37,30 @@ services:
       timeout: 10s
       retries: 3
 
+  backup-scheduler:
+    build: .
+    container_name: BackupScheduler-MyFlow
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-watermelon}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-watermelon_db}
+      - UPLOAD_FOLDER=/app/app/static/uploads
+      - BACKUP_ROOT_PATH=/mnt/user/GRM-BACKUP/BK-Web-MyFlow
+      - AUTO_DB_CREATE=1
+      - AUTO_SEED_DATA=0
+      - WAIT_FOR_DB=1
+      - BACKUP_SCHEDULER_INTERVAL_SECONDS=${BACKUP_SCHEDULER_INTERVAL_SECONDS:-30}
+    volumes:
+      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/MyFlow/data/uploads}:/app/app/static/uploads
+      - ${BACKUP_ROOT_PATH:-/mnt/user/GRM-BACKUP/BK-Web-MyFlow}:/mnt/user/GRM-BACKUP/BK-Web-MyFlow
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "app.backup_scheduler"]
+
   db:
     image: postgres:15-alpine
     container_name: DB-MyFlow

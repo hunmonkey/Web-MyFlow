@@ -76,3 +76,19 @@ class UserFormatSetting(db.Model):
     )
 
     user = db.relationship("User", lazy="joined")
+
+
+class BackupSchedule(db.Model):
+    __tablename__ = "backup_schedules"
+
+    id = db.Column(db.Integer, primary_key=True)
+    backup_type = db.Column(db.String(10), nullable=False, unique=True, index=True)
+    is_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    repeat_type = db.Column(db.String(10), nullable=False, default="weekly")
+    weekday = db.Column(db.Integer, nullable=False, default=0)
+    run_time = db.Column(db.String(5), nullable=False, default="03:00")
+    last_run_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

@@ -29,3 +29,11 @@ else
   echo "[안내] 아직 healthy가 아닐 수 있습니다. 10~30초 뒤 아래 명령으로 다시 확인해 주세요."
   echo "docker inspect --format '{{.State.Health.Status}}' Web-MyFlow"
 fi
+
+scheduler_status="$(docker inspect --format '{{.State.Status}}' BackupScheduler-MyFlow 2>/dev/null || true)"
+if [[ "$scheduler_status" == "running" ]]; then
+  echo "[완료] BackupScheduler-MyFlow status=running"
+else
+  echo "[안내] BackupScheduler-MyFlow 상태를 확인해 주세요."
+  echo "docker inspect --format '{{.State.Status}}' BackupScheduler-MyFlow"
+fi

@@ -14,6 +14,7 @@ services:
       - FLASK_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-watermelon}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-watermelon_db}
       - UPLOAD_FOLDER=/app/app/static/uploads
+      - BACKUP_ROOT_PATH=/mnt/user/GRM-BACKUP/BK-Web-MyFlow
       - APP_PORT=985
       - AUTO_DB_CREATE=1
       - AUTO_SEED_DATA=1
@@ -22,6 +23,7 @@ services:
     volumes:
       - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/MyFlow/data/instance}:/app/instance
       - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/MyFlow/data/uploads}:/app/app/static/uploads
+      - ${BACKUP_ROOT_PATH:-/mnt/user/GRM-BACKUP/BK-Web-MyFlow}:/mnt/user/GRM-BACKUP/BK-Web-MyFlow
     depends_on:
       db:
         condition: service_healthy

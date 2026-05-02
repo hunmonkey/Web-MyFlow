@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import gzip
+import os
 import re
+import shutil
+import subprocess
+import tarfile
 from datetime import datetime
+from pathlib import Path
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
 
 from app.extensions import db
 from app.models import Profile, User, UserFormatSetting
@@ -47,6 +55,96 @@ def _validate_password_strength(password: str) -> str | None:
     if not re.search(r"[A-Za-z]", password or "") or not re.search(r"[0-9]", password or ""):
         return "비밀번호는 영문과 숫자를 함께 포함해 주세요."
     return None
+
+
+def _create_backup_slot(category: str) -> Path:
+    backup_root = Path(current_app.config.get("BACKUP_ROOT_PATH", "/mnt/user/GRM-BACKUP/BK-Web-MyFlow"))
+    date_folder = datetime.now().strftime("%Y%m%d")
+    date_dir = backup_root / category / date_folder
+    date_dir.mkdir(parents=True, exist_ok=True)
+
+    seq = 1
+    while True:
+        seq_dir = date_dir / f"{seq:02d}"
+        if not seq_dir.exists():
+            seq_dir.mkdir(parents=True, exist_ok=False)
+            return seq_dir
+        seq += 1
+
+
+def _backup_postgres_to_gzip(slot_dir: Path) -> Path:
+    db_uri = str(current_app.config.get("SQLALCHEMY_DATABASE_URI") or "").strip()
+    if not db_uri:
+        raise RuntimeError("DB 연결 정보가 비어 있어 백업을 진행할 수 없습니다.")
+
+    try:
+        parsed = make_url(db_uri)
+    except ArgumentError as exc:
+        raise RuntimeError("DB 연결 주소 형식을 해석하지 못했습니다.") from exc
+
+    driver = (parsed.drivername or "").split("+", 1)[0]
+    if driver != "postgresql":
+        raise RuntimeError("현재 DB 백업은 PostgreSQL만 지원합니다.")
+
+    if not parsed.username or not parsed.host or not parsed.database:
+        raise RuntimeError("DB 접속 정보(사용자/호스트/DB이름)가 부족합니다.")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sql_path = slot_dir / f"db_{timestamp}.sql"
+    gz_path = slot_dir / f"db_{timestamp}.sql.gz"
+
+    cmd = [
+        "pg_dump",
+        "--host",
+        str(parsed.host),
+        "--port",
+        str(parsed.port or 5432),
+        "--username",
+        str(parsed.username),
+        "--no-owner",
+        "--clean",
+        "--if-exists",
+        "--encoding=UTF8",
+        str(parsed.database),
+    ]
+    env = os.environ.copy()
+    if parsed.password:
+        env["PGPASSWORD"] = str(parsed.password)
+
+    try:
+        with sql_path.open("wb") as sql_file:
+            result = subprocess.run(
+                cmd,
+                stdout=sql_file,
+                stderr=subprocess.PIPE,
+                env=env,
+                check=False,
+            )
+    except FileNotFoundError as exc:
+        raise RuntimeError("pg_dump 명령을 찾지 못했습니다. 컨테이너 빌드를 다시 진행해 주세요.") from exc
+
+    if result.returncode != 0:
+        sql_path.unlink(missing_ok=True)
+        stderr_text = (result.stderr or b"").decode("utf-8", errors="ignore").strip()
+        raise RuntimeError(stderr_text or "DB 백업 중 알 수 없는 오류가 발생했습니다.")
+
+    with sql_path.open("rb") as src, gzip.open(gz_path, "wb") as dst:
+        shutil.copyfileobj(src, dst)
+    sql_path.unlink(missing_ok=True)
+    return gz_path
+
+
+def _backup_upload_data_to_tar(slot_dir: Path) -> Path:
+    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    tar_path = slot_dir / f"data_{timestamp}.tar.gz"
+
+    with tarfile.open(tar_path, mode="w:gz") as tar:
+        tar.add(upload_dir, arcname=upload_dir.name)
+
+    return tar_path
 
 
 def _get_or_create_user_format_setting(user_id: int) -> UserFormatSetting:
@@ -118,6 +216,36 @@ def password_change():
     user.set_password(new_password)
     db.session.commit()
     flash("비밀번호를 변경했습니다.", "success")
+    return redirect(url_for("settings.index"))
+
+
+@settings_bp.post("/backup/db")
+def backup_db():
+    _require_admin()
+    slot_dir: Path | None = None
+    try:
+        slot_dir = _create_backup_slot("DB")
+        backup_file = _backup_postgres_to_gzip(slot_dir)
+        flash(f"DB 백업이 완료되었습니다: {backup_file}", "success")
+    except Exception as exc:  # noqa: BLE001
+        if slot_dir and slot_dir.exists() and not any(slot_dir.iterdir()):
+            slot_dir.rmdir()
+        flash(f"DB 백업에 실패했습니다: {exc}", "danger")
+    return redirect(url_for("settings.index"))
+
+
+@settings_bp.post("/backup/data")
+def backup_data():
+    _require_admin()
+    slot_dir: Path | None = None
+    try:
+        slot_dir = _create_backup_slot("DATA")
+        backup_file = _backup_upload_data_to_tar(slot_dir)
+        flash(f"일반자료 백업이 완료되었습니다: {backup_file}", "success")
+    except Exception as exc:  # noqa: BLE001
+        if slot_dir and slot_dir.exists() and not any(slot_dir.iterdir()):
+            slot_dir.rmdir()
+        flash(f"일반자료 백업에 실패했습니다: {exc}", "danger")
     return redirect(url_for("settings.index"))
 
 

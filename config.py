@@ -34,6 +34,11 @@ class Config:
         if os.environ.get("UPLOAD_FOLDER")
         else BASE_DIR / "app" / "static" / "uploads"
     )
+    BACKUP_ROOT_PATH = (
+        Path(os.environ["BACKUP_ROOT_PATH"]).expanduser()
+        if os.environ.get("BACKUP_ROOT_PATH")
+        else Path("/mnt/user/GRM-BACKUP/BK-Web-MyFlow")
+    )
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

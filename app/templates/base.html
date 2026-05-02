@@ -44,13 +44,21 @@
   {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body data-page-endpoint="{{ request.endpoint or '' }}">
 <script nonce="{{ csp_nonce }}">
 (function(){
   function bind() {
     var html = document.documentElement;
-    var btn = document.getElementById('csThemeToggle');
-    if (!btn) return;
+    var buttons = Array.from(document.querySelectorAll('[data-theme-toggle], #csThemeToggle'));
+    buttons = buttons.filter(function(btn, idx, list) { return list.indexOf(btn) === idx; });
+    if (!buttons.length) return;
+    function syncButtonState(btn, isLight) {
+      btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+      var dark = btn.querySelector('.cs-theme-icon-dark');
+      var light = btn.querySelector('.cs-theme-icon-light');
+      if (dark) dark.classList.toggle('d-none', isLight);
+      if (light) light.classList.toggle('d-none', !isLight);
+    }
     function apply(mode) {
       var isLight = mode === 'light';
       html.setAttribute('data-cs-theme', isLight ? 'light' : 'dark');
@@ -58,17 +66,15 @@
       html.style.colorScheme = isLight ? 'light' : 'dark';
       window.__csThemeMode = isLight ? 'light' : 'dark';
       window.__csThemeReady = true;
-      btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
-      var dark = btn.querySelector('.cs-theme-icon-dark');
-      var light = btn.querySelector('.cs-theme-icon-light');
-      if (dark) dark.classList.toggle('d-none', isLight);
-      if (light) light.classList.toggle('d-none', !isLight);
+      buttons.forEach(function(btn) { syncButtonState(btn, isLight); });
       try { localStorage.setItem('cs-theme-mode', isLight ? 'light' : 'dark'); } catch(e) {}
       document.dispatchEvent(new CustomEvent('cs:theme-changed', { detail: { mode: isLight ? 'light' : 'dark' } }));
     }
     apply(html.getAttribute('data-cs-theme') === 'light' ? 'light' : 'dark');
-    btn.addEventListener('click', function(){
-      apply(html.getAttribute('data-cs-theme') === 'light' ? 'dark' : 'light');
+    buttons.forEach(function(btn) {
+      btn.addEventListener('click', function(){
+        apply(html.getAttribute('data-cs-theme') === 'light' ? 'dark' : 'light');
+      });
     });
   }
   if (typeof window.whenCsThemeReady === 'function') {
@@ -184,7 +190,7 @@
         <i class="bi bi-list cs-inline-0026"></i>
       </button>
       <span class="cs-inline-0027">Personal</span>
-      <button id="csThemeToggle" class="btn btn-icon cs-inline-0025" type="button"
+      <button class="btn btn-icon cs-inline-0025" type="button" data-theme-toggle
               aria-label="테마 전환" aria-pressed="false">
         <i class="bi bi-moon cs-theme-icon-dark"></i>
         <i class="bi bi-sun cs-theme-icon-light d-none"></i>
@@ -193,30 +199,108 @@
 
     <!-- 페이지 본문 -->
     <div class="cs-content">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="mb-3">
-          {% for category, message in messages %}
-          <div class="alert alert-{{ 'warning' if category == 'error' else category }} py-2 mb-2" role="alert">
-            {{ message }}
+      <div id="csPageShell" class="cs-page-shell">
+        {% set page_title_block %}{% block page_title %}{% endblock %}{% endset %}
+        {% set resolved_page_title = page_title_block | trim or '개인 상황판' %}
+        {% set page_actions_block %}{% block page_actions %}{% endblock %}{% endset %}
+
+        <div class="cs-page-header">
+          <div class="page-heading">
+            <h1 class="page-title">{{ resolved_page_title | safe }}</h1>
           </div>
-          {% endfor %}
+
+          <div class="cs-global-search d-none d-md-block">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="globalSearch" class="cs-input"
+                   placeholder="메뉴 이름으로 검색"
+                   aria-label="통합 검색"
+                   autocomplete="off" spellcheck="false">
+            <div id="searchResults" class="glass-card d-none" aria-live="polite"></div>
+          </div>
+
+          <div class="ms-auto d-flex align-items-center gap-2 cs-header-actions">
+            <button class="btn btn-icon d-md-none cs-mobile-search-trigger no-print"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#mobileSearchModal"
+                    title="검색"
+                    aria-label="검색">
+              <i class="bi bi-search"></i>
+            </button>
+            <button class="btn btn-icon d-none d-md-flex no-print"
+                    id="headerPrintButton"
+                    title="인쇄"
+                    aria-label="인쇄"
+                    type="button">
+              <i class="bi bi-printer"></i>
+            </button>
+            <button class="btn btn-icon d-none d-md-flex no-print"
+                    id="headerNoticeButton"
+                    title="알림"
+                    aria-label="알림"
+                    type="button">
+              <i class="bi bi-bell"></i>
+            </button>
+            <button class="btn btn-icon d-none d-md-flex no-print cs-theme-toggle"
+                    type="button"
+                    id="csThemeToggle"
+                    data-theme-toggle
+                    title="테마 전환"
+                    aria-label="테마 전환"
+                    aria-pressed="false">
+              <i class="bi bi-moon-stars-fill cs-theme-icon-dark"></i>
+              <i class="bi bi-sun-fill cs-theme-icon-light d-none"></i>
+            </button>
+            <span class="cs-header-datetime d-none d-lg-inline-flex no-print"
+                  id="csHeaderDateTime"
+                  aria-live="polite"
+                  title="현재 시각">--</span>
+          </div>
+        </div>
+
+        {% if page_actions_block | trim %}
+        <div class="cs-page-inline-actions no-print">
+          {{ page_actions_block | trim | safe }}
         </div>
         {% endif %}
-      {% endwith %}
 
-      {% set page_title_block %}{% block page_title %}{% endblock %}{% endset %}
-      {% set page_actions_block %}{% block page_actions %}{% endblock %}{% endset %}
-      {% if page_title_block | trim or page_actions_block | trim %}
-      <section class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h4 mb-0">{{ page_title_block | trim | safe }}</h1>
-        <div class="d-flex flex-wrap gap-2">{{ page_actions_block | trim | safe }}</div>
-      </section>
-      {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="mb-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'warning' if category == 'error' else category }} py-2 mb-2" role="alert">
+              {{ message }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
 
-      {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
+      </div>
     </div>
 
+  </div>
+</div>
+
+<div class="modal fade cs-mobile-search-modal" id="mobileSearchModal" tabindex="-1" aria-labelledby="mobileSearchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mobileSearchModalLabel">메뉴 검색</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body">
+        <div class="cs-mobile-search-field">
+          <i class="bi bi-search"></i>
+          <input type="text" id="globalSearchMobile" class="cs-input"
+                 placeholder="메뉴 이름으로 검색"
+                 aria-label="모바일 통합 검색"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div id="searchResultsMobile" class="cs-mobile-search-results" aria-live="polite"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -321,6 +405,163 @@
       draw();
       window.addEventListener('resize', () => { resize(); init(); });
     })();
+  })();
+</script>
+<script nonce="{{ csp_nonce }}">
+  (() => {
+    const pad2 = (value) => String(value).padStart(2, "0");
+    const formatNow = (date) => [
+      date.getFullYear(), "년 ",
+      pad2(date.getMonth() + 1), "월 ",
+      pad2(date.getDate()), "일 ",
+      pad2(date.getHours()), ":",
+      pad2(date.getMinutes()),
+    ].join("");
+
+    const renderHeaderDateTime = () => {
+      const el = document.getElementById("csHeaderDateTime");
+      if (!el) return;
+      el.textContent = formatNow(new Date());
+    };
+
+    const escapeHtml = (raw) => String(raw || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+    const collectMenuItems = () => {
+      const links = Array.from(
+        document.querySelectorAll(".sidebar-nav a.sidebar-item[href]:not(.sidebar-logout)")
+      );
+      return links
+        .map((link) => {
+          const label = (link.textContent || "").trim().replace(/\s+/g, " ");
+          const href = link.getAttribute("href");
+          if (!label || !href || href === "#") return null;
+          return { label, href };
+        })
+        .filter(Boolean);
+    };
+
+    const menuItems = collectMenuItems();
+
+    const renderSearchResults = ({ query, container, mobile = false }) => {
+      if (!container) return;
+      const keyword = (query || "").trim().toLowerCase();
+      if (!keyword) {
+        container.innerHTML = "";
+        container.classList.add("d-none");
+        container.classList.remove("is-open");
+        return;
+      }
+
+      const matched = menuItems
+        .filter((item) => item.label.toLowerCase().includes(keyword))
+        .slice(0, 8);
+
+      if (!matched.length) {
+        container.innerHTML = `
+          <div class="cs-search-empty cs-search-empty-compact">
+            <div class="cs-search-empty-title">검색 결과가 없습니다.</div>
+            <div class="cs-search-empty-desc">다른 단어로 다시 검색해 주세요.</div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = matched.map((item) => `
+          <a href="${escapeHtml(item.href)}" class="d-flex align-items-center gap-2 p-2 rounded cs-search-result-link">
+            <span class="cs-search-result-type">메뉴</span>
+            <span class="cs-search-result-title">${escapeHtml(item.label)}</span>
+          </a>
+        `).join("");
+      }
+
+      if (mobile) {
+        container.classList.add("is-open");
+        container.classList.remove("d-none");
+      } else {
+        container.classList.remove("d-none");
+      }
+    };
+
+    const initHeaderSearch = () => {
+      const desktopInput = document.getElementById("globalSearch");
+      const desktopResults = document.getElementById("searchResults");
+      const mobileInput = document.getElementById("globalSearchMobile");
+      const mobileResults = document.getElementById("searchResultsMobile");
+      const mobileModalEl = document.getElementById("mobileSearchModal");
+
+      if (desktopInput && desktopResults) {
+        desktopInput.addEventListener("input", (event) => {
+          renderSearchResults({ query: event.target.value, container: desktopResults });
+        });
+
+        desktopInput.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            desktopResults.classList.add("d-none");
+            desktopInput.blur();
+          }
+          if (event.key === "Enter") {
+            const firstLink = desktopResults.querySelector("a.cs-search-result-link[href]");
+            if (firstLink) window.location.href = firstLink.getAttribute("href");
+          }
+        });
+
+        document.addEventListener("click", (event) => {
+          const searchContainer = desktopInput.closest(".cs-global-search");
+          if (searchContainer && !searchContainer.contains(event.target)) {
+            desktopResults.classList.add("d-none");
+          }
+        });
+      }
+
+      if (mobileInput && mobileResults) {
+        mobileInput.addEventListener("input", (event) => {
+          renderSearchResults({ query: event.target.value, container: mobileResults, mobile: true });
+        });
+      }
+
+      if (mobileModalEl) {
+        mobileModalEl.addEventListener("shown.bs.modal", () => {
+          if (mobileInput) mobileInput.focus();
+        });
+        mobileModalEl.addEventListener("hidden.bs.modal", () => {
+          if (!mobileInput || !mobileResults) return;
+          mobileInput.value = "";
+          mobileResults.innerHTML = "";
+          mobileResults.classList.remove("is-open");
+        });
+      }
+    };
+
+    const initHeaderButtons = () => {
+      const printBtn = document.getElementById("headerPrintButton");
+      if (printBtn) {
+        printBtn.addEventListener("click", () => window.print());
+      }
+
+      const noticeBtn = document.getElementById("headerNoticeButton");
+      if (noticeBtn) {
+        noticeBtn.addEventListener("click", () => {
+          window.alert("알림 센터는 다음 단계에서 연결됩니다.");
+        });
+      }
+    };
+
+    const start = () => {
+      renderHeaderDateTime();
+      if (window.__csHeaderClockTimer) clearInterval(window.__csHeaderClockTimer);
+      window.__csHeaderClockTimer = setInterval(renderHeaderDateTime, 30000);
+      initHeaderSearch();
+      initHeaderButtons();
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start, { once: true });
+    } else {
+      start();
+    }
   })();
 </script>
 {% block extra_js %}{% endblock %}

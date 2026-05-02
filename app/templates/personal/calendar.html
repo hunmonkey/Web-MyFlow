@@ -549,9 +549,11 @@ const applyCalendarThemeLayout = () => {
   if (!calendar) return;
   calendar.updateSize();
 };
-document.getElementById('csThemeToggle')?.addEventListener('click', () => {
+const refreshCalendarOnThemeChange = () => {
   setTimeout(applyCalendarThemeLayout, 80);
-});
+};
+document.addEventListener('cs:theme-changed', refreshCalendarOnThemeChange);
+document.getElementById('csThemeToggle')?.addEventListener('click', refreshCalendarOnThemeChange);
 
 document.querySelectorAll('.cat-chip').forEach(chip => {
   chip.addEventListener('click', () => {

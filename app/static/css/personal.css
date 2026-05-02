@@ -59,7 +59,7 @@ html[data-cs-theme="dark"] {
   color: var(--cs-text-primary) !important;
 }
 
-#csThemeToggle {
+[data-theme-toggle] {
   border-color: var(--cs-border);
 }
 

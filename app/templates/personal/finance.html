@@ -666,7 +666,8 @@ let incomeDonutChart = null;
 
   monthsSelect.addEventListener('change', () => fetchPersonalStats(monthsSelect.value));
   fetchPersonalStats(monthsSelect.value || 6);
-  document.getElementById('csThemeToggle')?.addEventListener('click', () => {
+
+  const refreshFinanceOnThemeChange = () => {
     setTimeout(() => {
       if (latestFinanceData) {
         renderTrendChart(latestFinanceData);
@@ -682,7 +683,9 @@ let incomeDonutChart = null;
       }
       applyTxToggleStyle();
     }, 120);
-  });
+  };
+  document.addEventListener('cs:theme-changed', refreshFinanceOnThemeChange);
+  document.getElementById('csThemeToggle')?.addEventListener('click', refreshFinanceOnThemeChange);
 
   window.__refreshFinanceChartsOnThemeChange = () => {
     if (latestFinanceData) {

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, g
 
 from config import config_map
 from app.extensions import db
@@ -93,6 +93,10 @@ def create_app(env_name: str | None = None) -> Flask:
 
     app.register_blueprint(main_bp)
     app.register_blueprint(personal_bp)
+
+    @app.context_processor
+    def inject_csp_nonce():
+        return {"csp_nonce": getattr(g, "csp_nonce", "")}
 
     with app.app_context():
         if _is_truthy(os.environ.get("AUTO_DB_CREATE", "1")):

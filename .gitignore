@@ -20,3 +20,5 @@ temp/
 __pycache__/
 *.pyc
 instance/
+data/
+.deployed_commit

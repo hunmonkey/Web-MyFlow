@@ -1,0 +1,52 @@
+services:
+  personal-web:
+    build: .
+    container_name: watermelon-personal-web
+    restart: unless-stopped
+    ports:
+      - "985:985"
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-watermelon}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-watermelon_db}
+      - UPLOAD_FOLDER=/app/app/static/uploads
+      - APP_PORT=985
+      - AUTO_DB_CREATE=1
+      - AUTO_SEED_DATA=1
+      - WAIT_FOR_DB=1
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-1}
+    volumes:
+      - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/instance}:/app/instance
+      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/uploads}:/app/app/static/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import sys,urllib.request; code=urllib.request.urlopen('http://localhost:985/healthz', timeout=5).getcode(); sys.exit(0 if code == 200 else 1)\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    container_name: watermelon-personal-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-watermelon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-watermelon_db}
+    volumes:
+      - ${POSTGRES_HOST_PATH:-/mnt/user/appdata/watermelon-personal/data/postgres}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-watermelon} -d ${POSTGRES_DB:-watermelon_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

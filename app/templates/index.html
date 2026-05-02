@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="page">
+  <section class="hero">
+    <p class="eyebrow">PERSONAL WEB</p>
+    <h1>{{ profile.name }} 님의 사이트</h1>
+    <p class="headline">{{ profile.headline }}</p>
+    <p class="intro">{{ profile.intro }}</p>
+  </section>
+
+  <section class="card">
+    <h2>프로젝트</h2>
+    {% if projects %}
+      <ul class="project-list">
+        {% for project in projects %}
+        <li class="project-item">
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.summary }}</p>
+          {% if project.link %}
+          <a href="{{ project.link }}" target="_blank" rel="noreferrer">자세히 보기</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">아직 등록된 프로젝트가 없습니다.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>연락처</h2>
+    {% if profile.contact_email %}
+      <p><a href="mailto:{{ profile.contact_email }}">{{ profile.contact_email }}</a></p>
+    {% else %}
+      <p class="empty">연락처 이메일을 설정해 주세요.</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

@@ -230,11 +230,11 @@
             <div class="row g-2">
               <div class="col-12 col-md-4">
                 <label class="form-label">표시 이름</label>
-                <input type="text" name="name" class="form-control cs-input" value="{{ profile.name if profile else '' }}" maxlength="80" required>
+                <input type="text" name="name" class="form-control cs-input" value="{{ profile.name if profile else '' }}" maxlength="80">
               </div>
               <div class="col-12 col-md-8">
                 <label class="form-label">한 줄 소개</label>
-                <input type="text" name="headline" class="form-control cs-input" value="{{ profile.headline if profile else '' }}" maxlength="200" required>
+                <input type="text" name="headline" class="form-control cs-input" value="{{ profile.headline if profile else '' }}" maxlength="200">
               </div>
               <div class="col-12">
                 <label class="form-label">소개 문구</label>

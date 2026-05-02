@@ -105,9 +105,9 @@ def profile_update():
         )
         db.session.add(profile)
 
-    profile.name = (request.form.get("name") or "").strip() or profile.name or "재훈"
-    profile.headline = (request.form.get("headline") or "").strip() or "개인 페이지"
-    profile.intro = (request.form.get("intro") or "").strip() or ""
+    profile.name = (request.form.get("name") or "").strip()
+    profile.headline = (request.form.get("headline") or "").strip()
+    profile.intro = (request.form.get("intro") or "").strip()
     profile.contact_email = (request.form.get("contact_email") or "").strip()
 
     db.session.commit()

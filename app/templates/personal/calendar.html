@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+{% set can_write_page = can_write('personal.calendar') %}
+{% block title %}캘린더{% endblock %}
+{% block page_title %}캘린더{% endblock %}
+
+{% block page_actions %}
+{% if can_write_page %}
+<button class="btn btn-sm btn-primary cs-inline-0212" id="btnAddSchedule"
+       >
+  <i class="bi bi-plus-lg me-1"></i>일정 추가
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+/* ── 공통 레이아웃 고정: 헤더/스크롤 충돌 및 여백 정렬 ── */
+.personal-calendar-page {
+  min-height: 0;
+  height: calc(100dvh - var(--cs-header-h) - 5rem);
+  max-height: calc(100dvh - var(--cs-header-h) - 5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+@media (max-width: 991px) {
+  .personal-calendar-page {
+    height: calc(100dvh - var(--cs-header-h) - 6.5rem);
+    max-height: calc(100dvh - var(--cs-header-h) - 6.5rem);
+  }
+}
+.calendar-filter-row {
+  min-height: 0;
+  margin-bottom: 0 !important;
+}
+.personal-calendar-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.personal-calendar-shell {
+  min-height: 0;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+}
+
+html[data-cs-theme="light"] .personal-calendar-page .fc {
+  --fc-page-bg-color: transparent;
+  --fc-border-color: var(--cs-border);
+  --fc-neutral-bg-color: #ffffff;
+  --fc-neutral-text-color: var(--cs-text-muted);
+  --fc-event-text-color: #ffffff;
+  --fc-list-event-hover-bg-color: rgba(15,23,42,.04);
+  color: var(--cs-text-primary);
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-event { color: #ffffff !important; }
+html[data-cs-theme="light"] .personal-calendar-page .fc .fc-daygrid-day-top { justify-content: flex-end; }
+html[data-cs-theme="light"] .personal-calendar-page .fc-col-header-cell-cushion,
+html[data-cs-theme="light"] .personal-calendar-page .fc-daygrid-day-number,
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sun .fc-daygrid-day-number,
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sat .fc-daygrid-day-number,
+html[data-cs-theme="light"] .personal-calendar-page .fc-daygrid-day-top,
+html[data-cs-theme="light"] .personal-calendar-page .fc-toolbar-title {
+  color: rgba(15,23,42,.8) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-list-event .fc-event-title,
+html[data-cs-theme="light"] .personal-calendar-page .fc-list-event .fc-list-event-title {
+  color: rgba(15,23,42,.84) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sun .fc-col-header-cell-cushion,
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sat .fc-col-header-cell-cushion,
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sun .fc-daygrid-day-number,
+html[data-cs-theme="light"] .personal-calendar-page .fc-day-sat .fc-daygrid-day-number {
+  color: #b91c1c !important;
+}
+
+/* ── FullCalendar 다크 테마 오버라이드 ── */
+.fc { font-family: var(--cs-font); }
+.fc-theme-standard .fc-scrollgrid,
+.fc-theme-standard td, .fc-theme-standard th { border-color: rgba(255,255,255,.08); }
+.fc-col-header-cell-cushion   { color: rgba(255,255,255,.6)  !important; font-size:.8rem; text-decoration:none; }
+.fc-daygrid-day-number         { color: rgba(255,255,255,.7)  !important; font-size:.82rem; text-decoration:none; }
+.fc .fc-day-sun .fc-col-header-cell-cushion,
+.fc .fc-day-sun .fc-daygrid-day-number,
+.fc .fc-day-sun .fc-list-day-text,
+.fc .fc-day-sun .fc-list-day-side-text { color:#ff6b6b !important; }
+.fc .fc-day-sat .fc-col-header-cell-cushion,
+.fc .fc-day-sat .fc-daygrid-day-number,
+.fc .fc-day-sat .fc-list-day-text,
+.fc .fc-day-sat .fc-list-day-side-text { color:#64b5ff !important; }
+.fc-daygrid-day.fc-day-today   { background: rgba(13,110,253,.12) !important; }
+.fc-daygrid-day-top            { justify-content: flex-end; }
+.fc-toolbar-title              { font-size:1rem !important; font-weight:700 !important; color:#e0e0f0 !important; }
+.fc-button                     { background:rgba(255,255,255,.08) !important; border:1px solid rgba(255,255,255,.15) !important;
+                                  color:#e0e0f0 !important; font-size:.78rem !important; border-radius:8px !important; }
+.fc-button:hover               { background:rgba(255,255,255,.15) !important; }
+.fc-button-active, .fc-button-primary:not(:disabled).fc-button-active
+                               { background:rgba(13,110,253,.3) !important; border-color:#0d6efd !important; }
+.fc-event                      { border:none !important; border-radius:5px !important;
+                                  font-size:.75rem !important; cursor:pointer; padding:2px 5px !important; }
+.fc-event-title                { font-weight:600 !important; }
+.fc-popover                    { background:#2a2a3e !important; border:1px solid rgba(255,255,255,.12) !important; }
+.fc-more-link                  { color:rgba(255,255,255,.5) !important; font-size:.72rem !important; }
+.fc-list-event:hover td        { background:rgba(255,255,255,.04) !important; }
+.fc-list-day-cushion           { background:rgba(255,255,255,.04) !important; }
+
+/* ── FullCalendar 컨테이너 가시성 보장 ── */
+#calendar {
+  position: relative;
+  z-index: 100 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.glass-card { overflow: visible !important; }
+.fc .fc-popover { z-index: 1050 !important; }
+/* ── 이벤트 텍스트 색상 강제 (배경에 묻힘 방지) ── */
+.fc-event .fc-event-title,
+.fc-event .fc-event-time              { color: #fff !important; }
+.fc-daygrid-day-number                { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.fc-col-header-cell-cushion           { color: rgba(255,255,255,.6) !important; text-decoration: none; }
+.fc .fc-day-sun .fc-col-header-cell-cushion,
+.fc .fc-day-sun .fc-daygrid-day-number,
+.fc .fc-day-sun .fc-list-day-text,
+.fc .fc-day-sun .fc-list-day-side-text { color:#ff6b6b !important; }
+.fc .fc-day-sat .fc-col-header-cell-cushion,
+.fc .fc-day-sat .fc-daygrid-day-number,
+.fc .fc-day-sat .fc-list-day-text,
+.fc .fc-day-sat .fc-list-day-side-text { color:#64b5ff !important; }
+
+/* ── FullCalendar 다크 테마 CSS 변수 전역 오버라이드 ── */
+.fc {
+  --fc-border-color:              rgba(255,255,255,.08);
+  --fc-today-bg-color:            rgba(13,110,253,.12);
+  --fc-neutral-bg-color:          transparent;
+  --fc-neutral-text-color:        rgba(255,255,255,.55);
+  --fc-page-bg-color:             transparent;
+  --fc-list-event-hover-bg-color: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.85);
+}
+/* 셀·헤더 배경 투명 처리 (글래스 배경과 조화) */
+.fc td,
+.fc th,
+.fc .fc-scrollgrid-section > td { background: transparent !important; }
+/* 리스트 뷰 날짜 행 */
+.fc .fc-list-day-cushion          { background: rgba(255,255,255,.04) !important; }
+
+/* ── 카테고리 필터 칩 ── */
+.cat-chip {
+  padding:4px 12px; border-radius:20px; font-size:.75rem; font-weight:600;
+  cursor:pointer; border:2px solid transparent; transition:.15s; user-select:none;
+}
+.cat-chip.active { border-color: currentColor; }
+/* 라이트 테마 오버라이드 */
+html[data-cs-theme="light"] .personal-calendar-page .fc-button {
+  background: #ffffff !important;
+  border: 1px solid var(--cs-border) !important;
+  color: var(--cs-text-primary) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-button:hover {
+  background: rgba(15,23,42,0.05) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-button-active,
+html[data-cs-theme="light"] .personal-calendar-page .fc-button-primary:not(:disabled).fc-button-active {
+  background: rgba(13,110,253,.12) !important;
+  color: #0d6efd !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-popover {
+  background: #ffffff !important;
+  border: 1px solid var(--cs-border) !important;
+  color: var(--cs-text-primary) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-more-link {
+  color: #334155 !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-list-day-cushion,
+html[data-cs-theme="light"] .personal-calendar-page .fc-list-event:hover td {
+  background: rgba(15,23,42,0.04) !important;
+  color: var(--cs-text-primary) !important;
+}
+html[data-cs-theme="light"] .personal-calendar-page .fc-theme-standard .fc-scrollgrid,
+html[data-cs-theme="light"] .personal-calendar-page .fc-theme-standard td,
+html[data-cs-theme="light"] .personal-calendar-page .fc-theme-standard th {
+  border-color: var(--cs-border) !important;
+}
+html[data-cs-theme="light"] .cat-chip[style*="#ffffff"],
+html[data-cs-theme="light"] .cat-chip[style*="#fff"] {
+  background: rgba(15,23,42,0.08) !important;
+  color: var(--cs-text-primary) !important;
+}
+html[data-cs-theme="light"] .fc {
+  color: #0f172a;
+}
+html[data-cs-theme="light"] .fc-toolbar-title {
+  color: #0f172a !important;
+}
+html[data-cs-theme="light"] .fc-col-header-cell-cushion {
+  color: #0f172a !important;
+}
+html[data-cs-theme="light"] .fc-daygrid-day-number {
+  color: #1f2937 !important;
+}
+html[data-cs-theme="light"] .fc-event .fc-event-title,
+html[data-cs-theme="light"] .fc-event .fc-event-time {
+  color: #0f172a !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="personal-calendar-page">
+
+{# 카테고리 필터 칩 #}
+<div class="d-flex align-items-center gap-2 flex-wrap calendar-filter-row">
+  <span class="cs-inline-0058">필터:</span>
+  {% set cats = [('all', '전체', '#ffffff'), ('personal', '개인', '#0d6efd'), ('work', '업무', '#ff9f0a'), ('family', '가족', '#ff375f')] %}
+  {% if current_user.role == "admin" %}
+  {% set cats = [('all', '전체', '#ffffff'), ('personal', '개인', '#0d6efd'), ('work', '업무', '#ff9f0a'), ('homelab', '홈랩', '#30d158'), ('family', '가족', '#ff375f')] %}
+  {% endif %}
+  {% for val, label, color in cats %}
+  <span class="cat-chip {% if val == 'all' %}active{% endif %}"
+        data-cat="{{ val }}"
+        style="background:{{ color }}22;color:{{ color }};">
+    {{ label }}
+  </span>
+  {% endfor %}
+</div>
+
+{# FullCalendar 컨테이너 — AOS 없음, opacity/visibility 강제 보장 #}
+<div class="glass-card p-3 personal-calendar-card cs-inline-0214">
+  <div class="cs-inline-0215 personal-calendar-shell" id="calendar"></div>
+</div>
+
+
+{# ══════════════════════════════════════════════════
+   일정 추가/수정 모달
+   ══════════════════════════════════════════════════ #}
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0053" id="modalTitle">
+          <i class="bi bi-calendar-plus me-2 text-primary"></i>일정 추가
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="scheduleId">
+
+        <div class="mb-3">
+          <label class="form-label cs-inline-0032">제목 <span class="cs-inline-0070">*</span></label>
+          <input type="text" id="scheduleTitle" class="form-control cs-input"
+                 placeholder="일정 제목 입력" required maxlength="200">
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label cs-inline-0032">시작</label>
+            <input type="datetime-local" id="scheduleStart" class="form-control cs-input">
+          </div>
+          <div class="col-6">
+            <label class="form-label cs-inline-0032">종료 (선택)</label>
+            <input type="datetime-local" id="scheduleEnd" class="form-control cs-input">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label cs-inline-0032">종일 일정</label>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="scheduleAllDay">
+            <label class="form-check-label cs-inline-0217" for="scheduleAllDay"
+                  >종일</label>
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label cs-inline-0032">분류</label>
+            <select id="scheduleCategory" class="form-select cs-input">
+              <option value="personal">개인</option>
+              <option value="work">업무</option>
+              {% if current_user.role == "admin" %}
+              <option value="homelab">홈랩</option>
+              {% endif %}
+              <option value="family">가족</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label cs-inline-0032">색상</label>
+            <div class="d-flex gap-2 flex-wrap mt-1" id="colorPicker">
+              {% for c in ['#0d6efd','#30d158','#ff9f0a','#ff375f','#bf5af2','#64d2ff','#ffd60a','#ff453a'] %}
+              <span class="color-dot" data-color="{{ c }}"
+                    style="width:24px;height:24px;border-radius:50%;background:{{ c }};
+                           cursor:pointer;border:3px solid transparent;transition:.1s;flex-shrink:0;"
+                    title="{{ c }}"></span>
+              {% endfor %}
+            </div>
+            <input type="hidden" id="scheduleColor" value="#0d6efd">
+          </div>
+        </div>
+        <div class="mb-1">
+          <label class="form-label cs-inline-0032">메모 (선택)</label>
+          <textarea id="scheduleDesc" class="form-control cs-input" rows="2"
+                    placeholder="메모 입력" maxlength="500"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer cs-inline-0218">
+        {% if can_write_page %}
+        <button type="button" id="btnDeleteSchedule" class="btn btn-sm d-none cs-inline-0219"
+               >
+          <i class="bi bi-trash3 me-1"></i>삭제
+        </button>
+        {% else %}
+        <span></span>
+        {% endif %}
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="button" id="btnSaveSchedule" class="btn btn-sm btn-primary cs-inline-0072"
+                 >저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+const CAN_WRITE_SCHEDULE = {{ 'true' if can_write_page else 'false' }};
+const CAT_COLORS = {
+  personal: '#0d6efd',
+  work:     '#ff9f0a',
+  homelab:  '#30d158',
+  family:   '#ff375f',
+};
+
+const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+
+function toLocalDatetime(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function getFormData() {
+  const allDay = document.getElementById('scheduleAllDay').checked;
+  const startRaw = document.getElementById('scheduleStart').value;
+  const endRaw   = document.getElementById('scheduleEnd').value;
+  const start = allDay ? startRaw.substring(0,10) : new Date(startRaw).toISOString();
+  const end   = endRaw  ? (allDay ? endRaw.substring(0,10) : new Date(endRaw).toISOString()) : null;
+  return {
+    title:       document.getElementById('scheduleTitle').value.trim(),
+    start, end, allDay,
+    category:    document.getElementById('scheduleCategory').value,
+    color:       document.getElementById('scheduleColor').value,
+    description: document.getElementById('scheduleDesc').value,
+  };
+}
+
+function openAddModal(startStr = null) {
+  if (!CAN_WRITE_SCHEDULE) return;
+  document.getElementById('scheduleId').value = '';
+  document.getElementById('scheduleTitle').value = '';
+  document.getElementById('scheduleStart').value = startStr
+    ? toLocalDatetime(startStr) : toLocalDatetime(new Date().toISOString());
+  document.getElementById('scheduleEnd').value = '';
+  document.getElementById('scheduleAllDay').checked = false;
+  document.getElementById('scheduleCategory').value = 'personal';
+  document.getElementById('scheduleColor').value = '#0d6efd';
+  setColorDot('#0d6efd');
+  document.getElementById('scheduleDesc').value = '';
+  document.getElementById('modalTitle').innerHTML =
+    '<i class="bi bi-calendar-plus me-2 text-primary"></i>일정 추가';
+  document.getElementById('btnDeleteSchedule').classList.add('d-none');
+  modal.show();
+}
+
+function openEditModal(event) {
+  if (!CAN_WRITE_SCHEDULE) return;
+  document.getElementById('scheduleId').value = event.id;
+  document.getElementById('scheduleTitle').value = event.title;
+  document.getElementById('scheduleStart').value = toLocalDatetime(event.start);
+  document.getElementById('scheduleEnd').value = event.end ? toLocalDatetime(event.end) : '';
+  document.getElementById('scheduleAllDay').checked = event.allDay;
+  document.getElementById('scheduleCategory').value =
+    event.extendedProps?.category || 'personal';
+  const color = event.backgroundColor || '#0d6efd';
+  document.getElementById('scheduleColor').value = color;
+  setColorDot(color);
+  document.getElementById('scheduleDesc').value =
+    event.extendedProps?.description || '';
+  document.getElementById('modalTitle').innerHTML =
+    '<i class="bi bi-pencil me-2 text-warning"></i>일정 수정';
+  document.getElementById('btnDeleteSchedule').classList.remove('d-none');
+  modal.show();
+}
+
+function setColorDot(selectedColor) {
+  document.querySelectorAll('.color-dot').forEach(dot => {
+    dot.style.border = dot.dataset.color === selectedColor
+      ? '3px solid #fff' : '3px solid transparent';
+  });
+}
+
+document.querySelectorAll('.color-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    document.getElementById('scheduleColor').value = dot.dataset.color;
+    setColorDot(dot.dataset.color);
+  });
+});
+
+document.getElementById('scheduleCategory').addEventListener('change', e => {
+  const color = CAT_COLORS[e.target.value] || '#0d6efd';
+  document.getElementById('scheduleColor').value = color;
+  setColorDot(color);
+});
+
+if (CAN_WRITE_SCHEDULE) document.getElementById('btnSaveSchedule').addEventListener('click', async () => {
+  const id   = document.getElementById('scheduleId').value;
+  const data = getFormData();
+  if (!data.title) { alert('제목을 입력해 주세요'); return; }
+  const isEdit = !!id;
+  const res = await fetch(isEdit ? `/api/schedules/${id}` : '/api/schedules', {
+    method:  isEdit ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (json.ok) { modal.hide(); if (calendar) calendar.refetchEvents(); }
+  else { alert('저장 실패: ' + (json.error || '알 수 없는 오류')); }
+});
+
+if (CAN_WRITE_SCHEDULE) document.getElementById('btnDeleteSchedule').addEventListener('click', async () => {
+  const id = document.getElementById('scheduleId').value;
+  if (!id || !confirm('일정을 삭제하시겠습니까?')) return;
+  const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (json.ok) { modal.hide(); if (calendar) calendar.refetchEvents(); }
+});
+
+if (CAN_WRITE_SCHEDULE) document.getElementById('btnAddSchedule')?.addEventListener('click', () => openAddModal());
+if (!CAN_WRITE_SCHEDULE) document.getElementById('btnSaveSchedule')?.classList.add('d-none');
+
+/* ── FullCalendar v6 초기화 ── */
+let activeFilter = 'all';
+let calendar;
+let calendarErrorShown = false;
+
+function showCalendarError() {
+  if (calendarErrorShown) return;
+  calendarErrorShown = true;
+  if (window.csShowToast) {
+    window.csShowToast('일정 데이터를 불러오지 못했습니다. 페이지를 새로고침하거나 로그인 상태를 확인해 주세요.', {
+      tone: 'danger',
+      title: '알림',
+    });
+  }
+}
+
+function clearCalendarError() {
+  calendarErrorShown = false;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const calendarEl = document.getElementById('calendar');
+  if (!calendarEl || typeof FullCalendar === 'undefined') {
+    showCalendarError();
+    return;
+  }
+
+  try {
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      /* v6 global 번들 기본 테마 사용 (bootstrap5 플러그인 미포함) */
+      locale:       'ko',
+      initialView:  window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
+      /* 높이를 자동 계산으로 두어 월 뷰 행 높이가 0으로 접히는 현상을 방지 */
+      height:       'auto',
+      contentHeight:'auto',
+      headerToolbar: {
+        left:   'prev,next today',
+        center: 'title',
+        right:  'dayGridMonth,timeGridWeek,listMonth',
+      },
+      buttonText:   { today: '오늘', month: '월', week: '주', list: '목록' },
+        firstDay:     0,
+      nowIndicator: true,
+      editable:     CAN_WRITE_SCHEDULE,
+      selectable:   CAN_WRITE_SCHEDULE,
+      selectMirror: true,
+
+      events: {
+        url:     '/api/schedules',
+        method:  'GET',
+        failure: () => showCalendarError(),
+        success: () => clearCalendarError(),
+      },
+
+      noEventsContent: '등록된 일정이 없습니다. 날짜를 클릭하여 일정을 추가해 보세요.',
+
+      eventDidMount(info) {
+        const cat = info.event.extendedProps?.category || 'all';
+        if (activeFilter !== 'all' && cat !== activeFilter) {
+          info.el.style.display = 'none';
+        }
+      },
+
+      dateClick(info)  { if (CAN_WRITE_SCHEDULE) openAddModal(info.date.toISOString()); },
+      eventClick(info) { if (CAN_WRITE_SCHEDULE) openEditModal(info.event); },
+
+      eventDrop(info) {
+        if (!CAN_WRITE_SCHEDULE) return;
+        fetch(`/api/schedules/${info.event.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            start:  info.event.start.toISOString(),
+            end:    info.event.end ? info.event.end.toISOString() : null,
+            allDay: info.event.allDay,
+          }),
+        });
+      },
+
+      eventResize(info) {
+        if (!CAN_WRITE_SCHEDULE) return;
+        fetch(`/api/schedules/${info.event.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ end: info.event.end.toISOString() }),
+        });
+      },
+    });
+
+    calendar.render();
+    setTimeout(() => calendar.updateSize(), 0);
+  } catch (e) {
+    showCalendarError();
+  }
+});
+
+const applyCalendarThemeLayout = () => {
+  if (!calendar) return;
+  calendar.updateSize();
+};
+document.getElementById('csThemeToggle')?.addEventListener('click', () => {
+  setTimeout(applyCalendarThemeLayout, 80);
+});
+
+document.querySelectorAll('.cat-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = chip.dataset.cat;
+    if (calendar) calendar.refetchEvents();
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}구독 관리{% endblock %}
+{% block page_title %}구독 관리{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{{ url_for('personal.payment_accounts') }}" class="btn btn-sm cs-inline-0223"
+    
+     title="결제수단(통장/카드) 추가·삭제 관리">
+    <i class="bi bi-credit-card me-1"></i>결제수단 관리
+  </a>
+  <button class="btn btn-sm btn-primary cs-inline-0212" data-bs-toggle="modal" data-bs-target="#addModal"
+         >
+    <i class="bi bi-plus-lg me-1"></i>구독 추가
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.sub-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 1.1rem 1.25rem;
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+  overflow: hidden;
+}
+.sub-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.sub-card .service-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+.sub-card.inactive { opacity: .5; }
+.cycle-badge {
+  font-size: .62rem; padding: 2px 7px; border-radius: 20px; font-weight: 700;
+}
+/* 라이트 테마 오버라이드 */
+html[data-cs-theme="light"] .sub-card {
+  background: #ffffff;
+  border: 1px solid var(--cs-border);
+  color: var(--cs-text-primary);
+}
+html[data-cs-theme="light"] .sub-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+html[data-cs-theme="light"] .cs-summary-card .cs-summary-label,
+html[data-cs-theme="light"] .cs-summary-card .cs-summary-meta,
+html[data-cs-theme="light"] .cs-summary-card .cs-summary-unit {
+  color: var(--cs-text-secondary);
+}
+html[data-cs-theme="light"] .cs-summary-card .cs-summary-value {
+  color: var(--cs-text-primary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── 요약 배너 ── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-primary);">
+      <div class="cs-summary-label">활성 구독</div>
+      <div class="cs-summary-value">{{ active_subs|length }}</div>
+      <div class="cs-summary-meta">서비스</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-warning);">
+      <div class="cs-summary-label">월 환산 합계</div>
+      <div class="cs-summary-value">
+        {{ '{:,.0f}'.format(monthly_total) }}<span class="cs-summary-unit">원</span>
+      </div>
+      <div class="cs-summary-meta">매월 지출</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-warning);">
+      <div class="cs-summary-label">연 환산 합계</div>
+      <div class="cs-summary-value">
+        {{ '{:,.0f}'.format(monthly_total * 12) }}<span class="cs-summary-unit">원</span>
+      </div>
+      <div class="cs-summary-meta">연간 지출</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    {# D-7 이내 결제 예정 카운트 #}
+    {% set soon = active_subs | selectattr('days_until_expiry', 'defined') | list %}
+    {% set soon_count = active_subs | selectattr('next_billing_date') |
+       selectattr('next_billing_date', 'ne', None) | list | length %}
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-secondary);">
+      <div class="cs-summary-label">비활성 구독</div>
+      <div class="cs-summary-value">{{ inactive_subs|length }}</div>
+      <div class="cs-summary-meta">일시정지</div>
+    </div>
+  </div>
+</div>
+
+{# ── 활성 구독 카드 그리드 ── #}
+{% if active_subs %}
+<h6 class="cs-inline-0360">
+  활성 구독 ({{ active_subs|length }})
+</h6>
+<div class="row g-3 mb-4">
+  {% for s in active_subs %}
+  {% set dl = (s.next_billing_date - today).days if s.next_billing_date else None %}
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="sub-card">
+      {# D-Day 배지 (좌상단) #}
+      {% if dl is not none %}
+      <span class="position-absolute top-0 end-0 m-2 badge-dday
+                   {{ 'urgent' if dl <= 3 else 'warning' if dl <= 7 else 'ok' }}"
+           >
+        {% if dl == 0 %}D-Day{% elif dl < 0 %}만료{% else %}D-{{ dl }}{% endif %}
+      </span>
+      {% endif %}
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        {# 서비스 아이콘 (카테고리별 색상) #}
+        {% set icon_map = {
+          'OTT/스트리밍': ('bi-play-circle-fill', 'var(--bs-danger)'),
+          '음악':         ('bi-music-note-beamed', '#ff375f'),
+          '클라우드/스토리지': ('bi-cloud-fill', 'var(--bs-primary)'),
+          '업무/생산성':  ('bi-briefcase-fill', 'var(--bs-warning)'),
+          '게임':         ('bi-controller', 'var(--bs-success)'),
+          '뉴스/미디어':  ('bi-newspaper', 'var(--bs-info)'),
+          '건강/피트니스':('bi-heart-pulse-fill', 'var(--bs-warning)'),
+        } %}
+        {% set icon_info = icon_map.get(s.category, ('bi-star-fill', 'var(--bs-purple, var(--bs-indigo))')) %}
+        <div class="service-icon" style="background:{{ icon_info[1] }}22;color:{{ icon_info[1] }};">
+          <i class="bi {{ icon_info[0] }}"></i>
+        </div>
+        <div class="cs-inline-0107">
+          <div class="cs-inline-0361">
+            {{ s.service_name }}
+          </div>
+          <div class="cs-inline-0332">
+            {{ s.category or '기타' }}
+            {% if s.payment_method %} · {{ s.payment_method }}{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between">
+        {# 금액 + 주기 #}
+        <div>
+          <span class="cs-inline-0362">
+            {{ '{:,.0f}'.format(s.billing_amount) }}원
+          </span>
+          <span class="cycle-badge ms-1 cs-inline-0363"
+               >
+            {% for val, label in billing_cycles %}{% if val == s.billing_cycle %}{{ label }}{% endif %}{% endfor %}
+          </span>
+        </div>
+        {# 다음 결제일 #}
+        <div class="text-end">
+          {% if s.next_billing_date %}
+          <div class="cs-inline-0332">다음 결제일</div>
+          <div class="cs-inline-0364">
+            {{ s.next_billing_date.strftime('%m월 %d일') }}
+          </div>
+          {% else %}
+          <div class="cs-inline-0365">결제일 미설정</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# 액션 버튼 #}
+      <div class="d-flex gap-2 mt-3 pt-2 cs-inline-0366">
+        <button class="btn btn-sm flex-grow-1 cs-inline-0367"
+               
+                data-bs-toggle="modal" data-bs-target="#editModal{{ s.id }}">
+          <i class="bi bi-pencil me-1"></i>수정
+        </button>
+        <form class="cs-inline-0368" method="POST" action="{{ url_for('personal.subscription_toggle', sid=s.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm w-100 cs-inline-0369"
+                 >
+            <i class="bi bi-pause-fill me-1"></i>일시정지
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('personal.subscription_delete', sid=s.id) }}"
+              data-cs-onsubmit="return confirm('삭제하시겠습니까?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-icon cs-inline-0370"
+                 >
+            <i class="bi bi-trash3 cs-inline-0122"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ── 수정 모달 (카드별) ── #}
+  <div class="modal fade" id="editModal{{ s.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content cs-modal">
+        <div class="modal-header cs-inline-0216">
+          <h5 class="modal-title cs-inline-0067">
+            <i class="bi bi-pencil me-2 text-warning"></i>구독 수정 — {{ s.service_name }}
+          </h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('personal.subscription_edit', sid=s.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="modal-body">
+            {% include '_sub_form_fields.html' ignore missing %}
+            {# 필드를 인라인으로 렌더 #}
+            <div class="mb-3">
+              <label class="form-label cs-inline-0032">서비스명</label>
+              <input type="text" name="service_name" class="form-control cs-input"
+                     value="{{ s.service_name }}" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label cs-inline-0032">금액 (원)</label>
+                <input type="number" name="billing_amount" class="form-control cs-input"
+                       value="{{ s.billing_amount }}" required min="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label cs-inline-0032">결제 주기</label>
+                <select name="billing_cycle" class="form-select cs-input">
+                  {% for val, label in billing_cycles %}
+                  <option value="{{ val }}" {{ 'selected' if s.billing_cycle == val }}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label cs-inline-0032">다음 결제일</label>
+                <input type="date" name="next_billing_date" class="form-control cs-input"
+                       value="{{ s.next_billing_date.isoformat() if s.next_billing_date else '' }}">
+              </div>
+              <div class="col-6">
+                <label class="form-label cs-inline-0032">결제수단</label>
+                <select name="payment_method" class="form-select cs-input">
+                  {% for m in payment_methods %}
+                  <option value="{{ m }}" {{ 'selected' if s.payment_method == m }}>{{ m }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label cs-inline-0032">카테고리</label>
+              <select name="category" class="form-select cs-input">
+                {% for c in sub_categories %}
+                <option value="{{ c }}" {{ 'selected' if s.category == c }}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-1">
+              <label class="form-label cs-inline-0032">메모</label>
+              <input type="text" name="notes" class="form-control cs-input"
+                     value="{{ s.notes or '' }}" maxlength="300">
+            </div>
+          </div>
+          <div class="modal-footer cs-inline-0245">
+            <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                   >취소</button>
+            <button type="submit" class="btn btn-sm btn-primary cs-inline-0072">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="glass-card p-5 text-center mb-4 cs-inline-0125">
+  <i class="bi bi-credit-card cs-inline-0371"></i>
+  <p class="mt-3 mb-3 cs-inline-0067">등록된 구독 서비스가 없습니다</p>
+  <button class="btn btn-sm btn-primary cs-inline-0072" data-bs-toggle="modal" data-bs-target="#addModal"
+         >첫 번째 구독 추가하기</button>
+</div>
+{% endif %}
+
+{# ── 비활성 구독 ── #}
+{% if inactive_subs %}
+<h6 class="cs-inline-0372">
+  일시정지 ({{ inactive_subs|length }})
+</h6>
+<div class="row g-2">
+  {% for s in inactive_subs %}
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="sub-card inactive d-flex align-items-center justify-content-between gap-3">
+      <div>
+        <div class="cs-inline-0373">{{ s.service_name }}</div>
+        <div class="cs-inline-0365">
+          {{ '{:,.0f}'.format(s.billing_amount) }}원 /
+          {% for v,l in billing_cycles %}{% if v==s.billing_cycle %}{{ l }}{% endif %}{% endfor %}
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('personal.subscription_toggle', sid=s.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm cs-inline-0374"
+               >
+          <i class="bi bi-play-fill me-1"></i>재활성화
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+{# ══════════════════════════════════════════════════
+   구독 추가 모달
+   ══════════════════════════════════════════════════ #}
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0067">
+          <i class="bi bi-plus-circle me-2 text-primary"></i>구독 서비스 추가
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('personal.subscription_add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label cs-inline-0032">서비스명 <span class="cs-inline-0070">*</span></label>
+            <input type="text" name="service_name" class="form-control cs-input"
+                   placeholder="예: Netflix, 유튜브 프리미엄" required maxlength="100">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">금액 (원) <span class="cs-inline-0070">*</span></label>
+              <input type="number" name="billing_amount" class="form-control cs-input"
+                     placeholder="0" required min="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">결제 주기</label>
+              <select name="billing_cycle" class="form-select cs-input">
+                {% for val, label in billing_cycles %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">다음 결제일</label>
+              <input type="date" name="next_billing_date" class="form-control cs-input"
+                     value="{{ today.isoformat() }}">
+            </div>
+            <div class="col-6">
+              <label class="form-label d-flex align-items-center justify-content-between cs-inline-0032">
+                결제수단
+                <a class="cs-inline-0300" href="{{ url_for('personal.payment_accounts') }}"
+                   title="결제수단 추가/삭제">
+                  <i class="bi bi-gear"></i> 관리
+                </a>
+              </label>
+              <select name="payment_method" class="form-select cs-input">
+                {% for m in payment_methods %}
+                <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label cs-inline-0032">카테고리</label>
+            <select name="category" class="form-select cs-input">
+              {% for c in sub_categories %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-1">
+            <label class="form-label cs-inline-0032">메모 (선택)</label>
+            <input type="text" name="notes" class="form-control cs-input"
+                   placeholder="선택 입력" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer cs-inline-0245">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="submit" class="btn btn-sm btn-primary cs-inline-0072">추가</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

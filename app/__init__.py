@@ -89,8 +89,10 @@ def create_app(env_name: str | None = None) -> Flask:
     db.init_app(app)
 
     from app.routes import main_bp
+    from app.routes_personal import personal_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(personal_bp)
 
     with app.app_context():
         if _is_truthy(os.environ.get("AUTO_DB_CREATE", "1")):

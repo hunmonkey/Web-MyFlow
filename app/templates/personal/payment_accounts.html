@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}결제 수단 관리{% endblock %}
+{% block page_title %}결제 수단 관리{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2">
+  <a href="{{ url_for('personal.finance') }}" class="btn btn-sm cs-inline-0246"
+    >
+    <i class="bi bi-arrow-left me-1"></i>가계부로
+  </a>
+  <button class="btn btn-sm btn-primary cs-inline-0212" data-bs-toggle="modal" data-bs-target="#addModal"
+         >
+    <i class="bi bi-plus-lg me-1"></i>수단 등록
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="glass-card">
+  <div class="card-header"><i class="bi bi-credit-card-2-front me-2 text-primary"></i>등록된 통장 / 카드</div>
+  {% if accounts %}
+  <div class="cs-inline-0295">
+    <table class="table table-hover mb-0 cs-inline-0348">
+      <thead class="cs-inline-0349">
+        <tr>
+          <th>구분</th><th>은행/카드사</th><th>별칭</th><th>계좌/카드번호</th>
+          <th>상태</th><th>비고</th><th class="cs-inline-0142">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acc in accounts %}
+        <tr class="cs-inline-0248">
+          <td>
+            {% if acc.account_type == 'bank' %}
+            <span class="cs-inline-0350">🏦 통장</span>
+            {% else %}
+            <span class="cs-inline-0351">💳 카드</span>
+            {% endif %}
+          </td>
+          <td>{{ acc.bank_name or '-' }}</td>
+          <td class="cs-inline-0340">{{ acc.account_name }}</td>
+          <td class="cs-inline-0352">{{ acc.account_number or '-' }}</td>
+          <td>
+            {% if acc.is_active %}
+            <span class="cs-inline-0353">사용중</span>
+            {% else %}
+            <span class="cs-inline-0354">비활성</span>
+            {% endif %}
+          </td>
+          <td class="cs-inline-0355">{{ acc.notes or '-' }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn btn-xs edit-btn cs-inline-0250"
+                      data-id="{{ acc.id }}"
+                      data-type="{{ acc.account_type }}"
+                      data-bank="{{ acc.bank_name or '' }}"
+                      data-name="{{ acc.account_name }}"
+                      data-number="{{ acc.account_number or '' }}"
+                      data-active="{{ '1' if acc.is_active else '0' }}"
+                      data-notes="{{ acc.notes or '' }}"
+                     >
+                수정
+              </button>
+              <form class="cs-inline-0068" method="POST"
+                    action="{{ url_for('personal.payment_account_delete', aid=acc.id) }}"
+                    data-cs-onsubmit="return confirm('삭제하시겠습니까?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="cs-inline-0251" type="submit"
+                       >
+                  삭제
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5 cs-inline-0125">
+    <i class="bi bi-credit-card cs-inline-0356"></i>
+    등록된 결제 수단이 없습니다.<br>
+    <small class="cs-inline-0020">통장/카드를 등록하면 가계부 입력 시 선택할 수 있습니다.</small>
+  </div>
+  {% endif %}
+</div>
+
+{# 등록 모달 #}
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0067"><i class="bi bi-plus-circle me-2 text-primary"></i>결제 수단 등록</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('personal.payment_account_add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label cs-inline-0032">구분</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="account_type" value="bank" id="typeBank" checked>
+                <label class="form-check-label cs-inline-0272" for="typeBank">🏦 통장/계좌</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="account_type" value="card" id="typeCard">
+                <label class="form-check-label cs-inline-0357" for="typeCard">💳 카드</label>
+              </div>
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">은행/카드사명</label>
+              <input type="text" name="bank_name" class="form-control cs-input"
+                     placeholder="예: 우리은행, KB카드">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">별칭 <span class="cs-inline-0070">*</span></label>
+              <input type="text" name="account_name" class="form-control cs-input"
+                     placeholder="예: 월급통장, 생활비카드" required maxlength="100">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label cs-inline-0032">계좌/카드번호 (선택, 마지막 4자리만 권장)</label>
+            <input type="text" name="account_number" class="form-control cs-input"
+                   placeholder="예: ****-**-1234" maxlength="30">
+          </div>
+          <div class="mb-1">
+            <label class="form-label cs-inline-0032">비고</label>
+            <input type="text" name="notes" class="form-control cs-input" maxlength="200">
+          </div>
+        </div>
+        <div class="modal-footer cs-inline-0245">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="submit" class="btn btn-sm btn-primary cs-inline-0072">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# 수정 모달 #}
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0067"><i class="bi bi-pencil me-2 text-warning"></i>결제 수단 수정</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editForm" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label cs-inline-0032">구분</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="account_type" value="bank" id="editTypeBank">
+                <label class="form-check-label cs-inline-0272" for="editTypeBank">🏦 통장/계좌</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="account_type" value="card" id="editTypeCard">
+                <label class="form-check-label cs-inline-0357" for="editTypeCard">💳 카드</label>
+              </div>
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">은행/카드사명</label>
+              <input type="text" name="bank_name" id="editBank" class="form-control cs-input">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">별칭</label>
+              <input type="text" name="account_name" id="editName" class="form-control cs-input" required maxlength="100">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label cs-inline-0032">계좌/카드번호</label>
+            <input type="text" name="account_number" id="editNumber" class="form-control cs-input" maxlength="30">
+          </div>
+          <div class="mb-2">
+            <label class="form-label cs-inline-0032">상태</label>
+            <select name="is_active" id="editActive" class="form-select cs-input">
+              <option value="1">사용중</option>
+              <option value="0">비활성</option>
+            </select>
+          </div>
+          <div class="mb-1">
+            <label class="form-label cs-inline-0032">비고</label>
+            <input type="text" name="notes" id="editNotes" class="form-control cs-input" maxlength="200">
+          </div>
+        </div>
+        <div class="modal-footer cs-inline-0245">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="submit" class="btn btn-sm btn-primary cs-inline-0072">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const type = btn.dataset.type;
+    document.getElementById(type === 'bank' ? 'editTypeBank' : 'editTypeCard').checked = true;
+    document.getElementById('editBank').value   = btn.dataset.bank;
+    document.getElementById('editName').value   = btn.dataset.name;
+    document.getElementById('editNumber').value = btn.dataset.number;
+    document.getElementById('editActive').value = btn.dataset.active;
+    document.getElementById('editNotes').value  = btn.dataset.notes;
+    document.getElementById('editForm').action  =
+      `/personal/finance/payment-accounts/${btn.dataset.id}/edit`;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+  });
+});
+</script>
+{% endblock %}

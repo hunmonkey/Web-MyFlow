@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+{% set can_write_page = can_write('personal.health') %}
+{% block title %}건강 일지{% endblock %}
+{% block page_title %}건강 일지{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  {% if can_write_page %}
+  <button class="btn btn-sm btn-primary cs-inline-0265" type="button" id="btnFocusHealthForm"
+         >
+    <i class="bi bi-plus-lg me-1"></i>기록 입력
+  </button>
+  {% else %}
+  <button class="btn btn-sm btn-secondary cs-inline-0265" type="button" disabled
+         title="현재 계정은 건강 일지 조회 권한만 있어 입력이 제한됩니다.">
+    <i class="bi bi-lock me-1"></i>조회 전용
+  </button>
+  {% endif %}
+  <button class="btn btn-sm cs-inline-0266" type="button" data-cs-onclick="window.print()"
+         >
+    <i class="bi bi-printer me-1"></i>리포트 출력
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.personal-health-page {
+  min-height: 0;
+  height: calc(100dvh - var(--cs-header-h) - 1.6rem);
+  max-height: calc(100dvh - var(--cs-header-h) - 1.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow: hidden;
+}
+.health-overview-card {
+  flex: 0 0 auto;
+  padding: 0.58rem 0.72rem;
+}
+.health-overview-top {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+  margin-bottom: 0.42rem;
+}
+.health-kpi-item {
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  padding: 0.42rem 0.56rem;
+  background: color-mix(in srgb, var(--cs-surface) 92%, transparent);
+  min-width: 0;
+}
+.health-kpi-label {
+  font-size: 0.75rem;
+  color: var(--cs-text-muted);
+  margin-bottom: 0.08rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.health-kpi-value {
+  font-size: 0.97rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.health-overview-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+.health-mini-stat {
+  font-size: 0.74rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--cs-border);
+  color: var(--cs-text-secondary);
+  background: color-mix(in srgb, var(--cs-surface) 86%, transparent);
+}
+.health-quick-form-card {
+  border: 1px dashed color-mix(in srgb, var(--cs-border) 86%, transparent);
+  border-radius: 12px;
+  padding: 0.5rem 0.58rem;
+  background: color-mix(in srgb, var(--cs-surface) 94%, transparent);
+  max-width: 100%;
+}
+.health-edit-hint {
+  font-size: 0.72rem;
+  color: var(--bs-info);
+}
+#health-quick-form-card .row {
+  --bs-gutter-x: 0.36rem;
+  --bs-gutter-y: 0.28rem;
+}
+#health-quick-form-card .form-label,
+#health-quick-form-card .form-control,
+#health-quick-form-card .form-select,
+#health-quick-form-card .btn,
+#health-quick-form-card .form-check-label {
+  font-size: 0.8rem;
+}
+#health-quick-form-card .form-control,
+#health-quick-form-card .form-select {
+  min-height: 31px;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+#health-quick-form-card .btn {
+  min-height: 31px;
+}
+#health-quick-form-card .form-switch {
+  margin-top: 0;
+}
+.health-readonly-note {
+  font-size: 0.82rem;
+  color: var(--cs-text-secondary);
+}
+.health-main-row {
+  --bs-gutter-x: 0.5rem;
+  --bs-gutter-y: 0.4rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-bottom: 0 !important;
+}
+.health-main-row > [class*="col-"] {
+  display: flex;
+  min-height: 0;
+}
+.health-chart-card,
+.health-log-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.health-chart-card .card-header,
+.health-log-card .card-header {
+  padding: 0.48rem 0.65rem;
+}
+.health-chart-card .card-header span,
+.health-log-card .card-header span {
+  font-size: 0.9rem;
+}
+.health-chart-controls label {
+  font-size: 0.76rem;
+  color: var(--cs-text-muted);
+}
+.health-chart-controls .form-control {
+  min-height: 31px;
+  font-size: 0.8rem;
+}
+.health-chart-wrap {
+  min-height: 0;
+  height: clamp(150px, 24vh, 236px);
+}
+.health-log-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+.health-log-table-wrap table {
+  font-size: 0.78rem;
+}
+.health-log-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--cs-surface-strong);
+}
+#health-chart canvas {
+  max-height: 100%;
+}
+@media (max-width: 1399.98px) {
+  .health-overview-top {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1199.98px) {
+  .personal-health-page {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+@media (max-width: 767.98px) {
+  .health-overview-top {
+    grid-template-columns: 1fr;
+  }
+}
+/* 라이트 테마 오버라이드 */
+html[data-cs-theme="light"] .personal-health-page .badge[style*="rgba(255,255,255"],
+html[data-cs-theme="light"] .personal-health-page .badge[style*="rgba(255, 255, 255"] {
+  background: rgba(15, 23, 42, 0.08) !important;
+  color: rgba(15, 23, 42, 0.55) !important;
+}
+html[data-cs-theme="light"] .personal-health-page span[style*="rgba(255,255,255"],
+html[data-cs-theme="light"] .personal-health-page span[style*="rgba(255, 255, 255"] {
+  color: rgba(15, 23, 42, 0.55) !important;
+}
+html[data-cs-theme="light"] .personal-health-page .table th,
+html[data-cs-theme="light"] .personal-health-page .table td {
+  color: var(--cs-text-primary);
+  border-color: var(--cs-border);
+}
+html[data-cs-theme="light"] .personal-health-page .table thead th {
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--cs-text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="personal-health-page">
+  {% set summary_cards = [
+    ('bi-speedometer2', '최근 체중', (latest.weight|string + ' kg') if latest and latest.weight else '--', 'var(--bs-info)'),
+    ('bi-droplet-fill', '최근 혈당', (latest.blood_sugar|string + ' mg/dL') if latest and latest.blood_sugar else '--', 'var(--bs-danger)'),
+    ('bi-heart-pulse-fill', '최근 혈압', ((latest.blood_pressure_systolic|string + '/' + latest.blood_pressure_diastolic|string) if latest and latest.blood_pressure_systolic else '--'), 'var(--bs-warning)'),
+    ('bi-calendar-check', '마지막 기록일', latest.log_date.strftime('%Y.%m.%d') if latest else '--', 'var(--bs-success)'),
+  ] %}
+  {% set glucose_badge_class_map = {
+    '안정': 'text-bg-success-subtle text-success border-success-subtle',
+    '경계': 'text-bg-warning-subtle text-warning border-warning-subtle',
+    '주의': 'text-bg-danger-subtle text-danger border-danger-subtle',
+    '미입력': 'bg-body-tertiary text-body border',
+  } %}
+  {% set pressure_badge_class_map = {
+    '안정': 'text-bg-success-subtle text-success border-success-subtle',
+    '관찰': 'text-bg-warning-subtle text-warning border-warning-subtle',
+    '주의': 'text-bg-danger-subtle text-danger border-danger-subtle',
+    '미입력': 'bg-body-tertiary text-body border',
+  } %}
+
+  <div class="glass-card health-overview-card" id="health-overview-card">
+    <div class="health-overview-top">
+      {% for icon, label, value, color in summary_cards %}
+      <div class="health-kpi-item">
+        <div class="health-kpi-label"><i class="bi {{ icon }} me-1" style="color:{{ color }};"></i>{{ label }}</div>
+        <div class="health-kpi-value" style="color:{{ color }};">{{ value }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="health-overview-meta">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge rounded-pill {{ glucose_badge_class_map.get(glucose_info.label, 'bg-body-tertiary text-body border') }}" style="font-size:.74rem;">혈당 {{ glucose_info.label }}</span>
+        <span class="badge rounded-pill {{ pressure_badge_class_map.get(pressure_info.label, 'bg-body-tertiary text-body border') }}" style="font-size:.74rem;">혈압 {{ pressure_info.label }}</span>
+        <span class="badge rounded-pill {% if latest and latest.meds_taken %}text-bg-success-subtle text-success border-success-subtle{% else %}bg-body-tertiary text-body border{% endif %}" style="font-size:.74rem;">복약 {{ '완료' if latest and latest.meds_taken else '미체크' }}</span>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="health-mini-stat">체중 변화: {% if weight_change is not none %}{{ '+' if weight_change > 0 else '' }}{{ '%.1f'|format(weight_change) }} kg{% else %}--{% endif %}</span>
+        <span class="health-mini-stat">최근 7회 평균 혈당: {{ avg_glucose ~ ' mg/dL' if avg_glucose else '--' }}</span>
+        <span class="health-mini-stat">최근 7회 복약률: {{ meds_rate }}%</span>
+        <span class="health-mini-stat">최근 30일 기록: {{ month_record_count }}회</span>
+      </div>
+    </div>
+
+    {% if can_write_page %}
+    <div class="health-quick-form-card" id="health-quick-form-card">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <div class="fw-semibold"><i class="bi bi-keyboard me-1 text-primary"></i>빠른 기록 입력</div>
+        <div class="d-flex align-items-center gap-2">
+          <span id="healthQuickEditHint" class="d-none health-edit-hint">선택한 날짜의 기존 기록을 불러왔습니다.</span>
+          <span class="badge cs-inline-0302">즉시 저장</span>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('personal.health_add') }}" class="row align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-6 col-xl-2">
+          <label class="form-label cs-inline-0032">기록 날짜</label>
+          <input type="date" name="log_date" id="healthQuickLogDate" class="form-control cs-input"
+                 value="{{ today.isoformat() }}" required>
+        </div>
+        <div class="col-6 col-xl-2">
+          <label class="form-label cs-inline-0032">기록 시간</label>
+          <input type="time" name="log_time" id="healthQuickLogTime" class="form-control cs-input"
+                 value="{{ latest.log_time if latest and latest.log_time else '' }}">
+        </div>
+        <div class="col-6 col-xl-1">
+          <label class="form-label cs-inline-0032">체중</label>
+          <input type="number" name="weight" id="healthQuickWeight" class="form-control cs-input"
+                 step="0.1" min="20" max="300" placeholder="kg">
+        </div>
+        <div class="col-6 col-xl-1">
+          <label class="form-label cs-inline-0032">혈당</label>
+          <input type="number" name="blood_sugar" id="healthQuickBloodSugar" class="form-control cs-input"
+                 min="40" max="600" placeholder="mg/dL">
+        </div>
+        <div class="col-12 col-xl-2">
+          <label class="form-label cs-inline-0032">혈압(수축/이완)</label>
+          <div class="d-flex gap-1">
+            <input type="number" name="blood_pressure_systolic" id="healthQuickPressureSystolic" class="form-control cs-input"
+                   min="60" max="250" placeholder="120">
+            <input type="number" name="blood_pressure_diastolic" id="healthQuickPressureDiastolic" class="form-control cs-input"
+                   min="40" max="150" placeholder="80">
+          </div>
+        </div>
+        <div class="col-6 col-xl-1">
+          <label class="form-label cs-inline-0032">복약</label>
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" name="meds_taken" id="healthQuickMedsTaken">
+            <label class="form-check-label cs-inline-0293" for="healthQuickMedsTaken">체크</label>
+          </div>
+        </div>
+        <div class="col-6 col-xl-2">
+          <label class="form-label cs-inline-0032">복약 메모</label>
+          <input type="text" name="meds_name" id="healthQuickMedsName" class="form-control cs-input" maxlength="200"
+                 placeholder="약 이름">
+        </div>
+        <div class="col-12 col-xl-3">
+          <label class="form-label cs-inline-0032">메모</label>
+          <input type="text" name="memo" id="healthQuickMemo" class="form-control cs-input" maxlength="300"
+                 placeholder="컨디션, 특이사항">
+        </div>
+        <div class="col-12 col-xl-1">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-floppy me-1"></i>저장
+          </button>
+        </div>
+      </form>
+    </div>
+    {% else %}
+    <div class="health-readonly-note">
+      <i class="bi bi-lock-fill me-1 text-warning"></i>현재 계정은 건강 일지 조회 전용입니다.
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-2 health-main-row">
+    <div class="col-12 col-xl-7">
+      <div class="glass-card health-chart-card">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span><i class="bi bi-graph-up-arrow me-2 text-info"></i>최근 60일 변화 그래프</span>
+          <div class="d-flex gap-2 flex-wrap cs-inline-0022">
+            <span class="cs-inline-0275">체중 선</span>
+            <span class="cs-inline-0276">목표선</span>
+            <span class="cs-inline-0277">혈당 선</span>
+            <span class="cs-inline-0278">수축 혈압 선</span>
+            <span class="cs-inline-0279">이완 혈압 선</span>
+          </div>
+        </div>
+        <div class="p-2 d-flex flex-column gap-2 flex-grow-1 min-h-0">
+          <div class="d-flex align-items-center gap-2 health-chart-controls">
+            <label for="weightGoalInput" class="mb-0">목표 체중</label>
+            <input type="number" id="weightGoalInput" class="form-control cs-input cs-inline-0282"
+                   step="0.1" min="20" max="300" placeholder="예: 70.0">
+          </div>
+          {% if chart_dates %}
+          <div class="cs-inline-0283 health-chart-wrap" id="health-chart"></div>
+          {% else %}
+          <div class="text-center py-4 cs-inline-0125">
+            <i class="bi bi-bar-chart-line cs-inline-0284"></i>
+            <p class="mt-2 mb-0 cs-inline-0049">기록 없음</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+      <div class="glass-card health-log-card">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span><i class="bi bi-table me-2"></i>최근 건강 기록</span>
+          <div class="d-flex gap-2 flex-wrap cs-inline-0078">
+            <span>7회 평균 체중: {{ '%.1f kg'|format(avg_weight) if avg_weight is not none else '--' }}</span>
+            <span>평균 혈압: {{ avg_systolic ~ '/' ~ avg_diastolic if avg_systolic and avg_diastolic else '--' }}</span>
+            <span>30일 복약률: {{ month_meds_rate }}%</span>
+          </div>
+        </div>
+
+        {% if recent_logs %}
+        <div class="cs-inline-0295 health-log-table-wrap">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>시간</th>
+                <th>체중</th>
+                <th>혈당</th>
+                <th>혈압</th>
+                <th class="text-center">복약</th>
+                <th>메모</th>
+                {% if can_write_page %}
+                <th class="cs-inline-0296"></th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_logs %}
+              {% set row_glucose_class = 'text-body-secondary' %}
+              {% if log.blood_sugar %}
+                {% if log.blood_sugar >= 126 %}
+                  {% set row_glucose_class = 'text-danger' %}
+                {% elif log.blood_sugar >= 100 %}
+                  {% set row_glucose_class = 'text-warning' %}
+                {% else %}
+                  {% set row_glucose_class = 'text-success' %}
+                {% endif %}
+              {% endif %}
+              {% set row_pressure_class = 'text-body-secondary' %}
+              {% if log.blood_pressure_systolic %}
+                {% if log.blood_pressure_systolic >= 140 or (log.blood_pressure_diastolic and log.blood_pressure_diastolic >= 90) %}
+                  {% set row_pressure_class = 'text-warning' %}
+                {% elif log.blood_pressure_systolic >= 120 or (log.blood_pressure_diastolic and log.blood_pressure_diastolic >= 80) %}
+                  {% set row_pressure_class = 'text-warning' %}
+                {% else %}
+                  {% set row_pressure_class = 'text-success' %}
+                {% endif %}
+              {% endif %}
+              <tr>
+                <td class="cs-inline-0297">{{ log.log_date.strftime('%Y.%m.%d') }}</td>
+                <td class="cs-inline-0298">{{ log.log_time or '-' }}</td>
+                <td class="cs-inline-0299">
+                  {% if log.weight %}{{ log.weight }} <span class="cs-inline-0300">kg</span>{% else %}-{% endif %}
+                </td>
+                <td class="cs-inline-0081">
+                  {% if log.blood_sugar %}
+                    <span class="{{ row_glucose_class }}">{{ log.blood_sugar }}</span>
+                    <span class="cs-inline-0300">mg/dL</span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="cs-inline-0032">
+                  {% if log.blood_pressure_systolic %}
+                    <span class="{{ row_pressure_class }}">{{ log.blood_pressure_systolic }}/{{ log.blood_pressure_diastolic or '?' }}</span>
+                    <span class="cs-inline-0301">mmHg</span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  {% if log.meds_taken %}
+                  <span class="badge cs-inline-0302">복약</span>
+                  {% else %}
+                  <span class="badge cs-inline-0303">미체크</span>
+                  {% endif %}
+                </td>
+                <td class="cs-inline-0304">
+                  <div class="cs-inline-0305">
+                    {{ log.memo or log.meds_name or '-' }}
+                  </div>
+                </td>
+                {% if can_write_page %}
+                <td>
+                  <form method="POST" action="{{ url_for('personal.health_delete', lid=log.id) }}"
+                        data-cs-onsubmit="return confirm('이 기록을 삭제하시겠습니까?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-icon cs-inline-0241">
+                      <i class="bi bi-trash3 cs-inline-0041"></i>
+                    </button>
+                  </form>
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 cs-inline-0125">
+          <i class="bi bi-clipboard-heart cs-inline-0126"></i>
+          <p class="mt-2 mb-0 cs-inline-0049">기록 없음</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+<div class="print-only cs-inline-0306">
+  <div class="cs-inline-0307">
+    <h1 class="cs-inline-0308">건강 리포트</h1>
+    <p class="cs-inline-0309">
+      최근 기록일 {{ latest.log_date.strftime('%Y.%m.%d') if latest else '-' }}
+    </p>
+  </div>
+  <div class="cs-inline-0310">
+    <div class="cs-inline-0311">코멘트</div>
+    <div class="cs-inline-0312">{{ weekly_comment }}</div>
+  </div>
+  <div class="cs-inline-0313">
+    <div class="cs-inline-0314">
+      <div class="cs-inline-0315">상태</div>
+      <div class="cs-inline-0316">
+        체중: {{ latest.weight ~ ' kg' if latest and latest.weight else '-' }}<br>
+        혈당: {{ latest.blood_sugar ~ ' mg/dL' if latest and latest.blood_sugar else '-' }}<br>
+        혈압: {{ (latest.blood_pressure_systolic|string ~ '/' ~ latest.blood_pressure_diastolic|string) if latest and latest.blood_pressure_systolic else '-' }}<br>
+        복약: {{ '완료' if latest and latest.meds_taken else '미체크' }}
+      </div>
+    </div>
+    <div class="cs-inline-0314">
+      <div class="cs-inline-0315">30일</div>
+      <div class="cs-inline-0316">
+        기록 수: {{ month_record_count }}회<br>
+        혈당 주의: {{ month_high_glucose_count }}회<br>
+        혈압 주의: {{ month_high_pressure_count }}회<br>
+        복약률: {{ month_meds_rate }}%
+      </div>
+    </div>
+  </div>
+  <table class="cs-inline-0317">
+    <thead>
+      <tr class="cs-inline-0318">
+        <th class="cs-inline-0319">날짜</th>
+        <th class="cs-inline-0319">시간</th>
+        <th class="cs-inline-0319">체중</th>
+        <th class="cs-inline-0319">혈당</th>
+        <th class="cs-inline-0319">혈압</th>
+        <th class="cs-inline-0319">복약</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in recent_logs[:10] %}
+      <tr>
+        <td class="cs-inline-0320">{{ log.log_date.strftime('%Y.%m.%d') }}</td>
+        <td class="cs-inline-0320">{{ log.log_time or '-' }}</td>
+        <td class="cs-inline-0320">{{ log.weight ~ ' kg' if log.weight else '-' }}</td>
+        <td class="cs-inline-0320">{{ log.blood_sugar ~ ' mg/dL' if log.blood_sugar else '-' }}</td>
+        <td class="cs-inline-0320">{{ (log.blood_pressure_systolic|string ~ '/' ~ log.blood_pressure_diastolic|string) if log.blood_pressure_systolic else '-' }}</td>
+        <td class="cs-inline-0320">{{ '복약' if log.meds_taken else '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+const chartDates = {{ chart_dates | tojson }};
+const chartWeight = {{ chart_weight | tojson }};
+const chartGlucose = {{ chart_glucose | tojson }};
+const chartPressureSystolic = {{ chart_pressure_systolic | tojson }};
+const chartPressureDiastolic = {{ chart_pressure_diastolic | tojson }};
+const logsByDate = {{ logs_by_date | tojson }};
+const defaultWeightGoal = {{ (latest.weight if latest and latest.weight else 70) | tojson }};
+let healthChart = null;
+
+function getHealthChartTheme() {
+  const isLightTheme = document.documentElement.getAttribute('data-cs-theme') === 'light';
+  return {
+    mode: isLightTheme ? 'light' : 'dark',
+    textColor: isLightTheme ? 'rgba(15,23,42,.58)' : 'rgba(255,255,255,.55)',
+    gridColor: isLightTheme ? 'rgba(15,23,42,.08)' : 'rgba(255,255,255,.06)',
+    annotationBg: isLightTheme ? 'rgba(255,255,255,.92)' : 'transparent',
+  };
+}
+
+function fillHealthForm(logDate) {
+  const logTimeInput = document.getElementById('healthQuickLogTime');
+  const weightInput = document.getElementById('healthQuickWeight');
+  const bloodSugarInput = document.getElementById('healthQuickBloodSugar');
+  const pressureSystolicInput = document.getElementById('healthQuickPressureSystolic');
+  const pressureDiastolicInput = document.getElementById('healthQuickPressureDiastolic');
+  const medsTakenInput = document.getElementById('healthQuickMedsTaken');
+  const medsNameInput = document.getElementById('healthQuickMedsName');
+  const memoInput = document.getElementById('healthQuickMemo');
+  if (
+    !logTimeInput ||
+    !weightInput ||
+    !bloodSugarInput ||
+    !pressureSystolicInput ||
+    !pressureDiastolicInput ||
+    !medsTakenInput ||
+    !medsNameInput ||
+    !memoInput
+  ) {
+    return;
+  }
+
+  const log = logsByDate[logDate];
+  const hintEl = document.getElementById('healthQuickEditHint');
+
+  if (!log) {
+    hintEl?.classList.add('d-none');
+    logTimeInput.value = '';
+    weightInput.value = '';
+    bloodSugarInput.value = '';
+    pressureSystolicInput.value = '';
+    pressureDiastolicInput.value = '';
+    medsTakenInput.checked = false;
+    medsNameInput.value = '';
+    memoInput.value = '';
+    return;
+  }
+
+  hintEl?.classList.remove('d-none');
+  logTimeInput.value = log.log_time || '';
+  weightInput.value = log.weight || '';
+  bloodSugarInput.value = log.blood_sugar || '';
+  pressureSystolicInput.value = log.blood_pressure_systolic || '';
+  pressureDiastolicInput.value = log.blood_pressure_diastolic || '';
+  medsTakenInput.checked = !!log.meds_taken;
+  medsNameInput.value = log.meds_name || '';
+  memoInput.value = log.memo || '';
+}
+
+function getWeightGoal() {
+  const stored = localStorage.getItem('personal-health-weight-goal');
+  const parsed = stored ? parseFloat(stored) : parseFloat(defaultWeightGoal);
+  return Number.isFinite(parsed) ? parsed : 70;
+}
+
+function buildWeightGoalSeries(goalValue) {
+  return chartDates.map(() => goalValue);
+}
+
+function renderHealthChart(goalValue) {
+  if (!chartDates.length || !document.getElementById('health-chart')) {
+    return;
+  }
+
+  const theme = getHealthChartTheme();
+
+  if (healthChart) {
+    healthChart.destroy();
+  }
+
+  healthChart = new ApexCharts(document.getElementById('health-chart'), {
+    chart: {
+      type: 'line',
+      height: '100%',
+      background: 'transparent',
+      toolbar: { show: true, tools: { download: false } },
+      zoom: { enabled: false },
+    },
+    series: [
+      { name: '체중 (kg)', type: 'line', data: chartWeight },
+      { name: '목표 체중', type: 'line', data: buildWeightGoalSeries(goalValue) },
+      { name: '혈당 (mg/dL)', type: 'line', data: chartGlucose },
+      { name: '수축 혈압', type: 'line', data: chartPressureSystolic },
+      { name: '이완 혈압', type: 'line', data: chartPressureDiastolic },
+    ],
+    xaxis: {
+      categories: chartDates,
+      labels: {
+        style: { colors: theme.textColor, fontSize: '11px' },
+        rotate: -45,
+      },
+      axisBorder: { color: theme.gridColor },
+      axisTicks: { color: theme.gridColor },
+    },
+    yaxis: [
+      {
+        seriesName: '체중 (kg)',
+        title: { text: '체중 (kg)', style: { color: 'var(--bs-info)', fontSize: '12px' } },
+        labels: {
+          style: { colors: 'var(--bs-info)', fontSize: '11px' },
+          formatter: (value) => value ? value.toFixed(1) : '',
+        },
+        axisBorder: { show: true, color: 'var(--bs-info)' },
+      },
+      {
+        seriesName: '목표 체중',
+        show: false,
+        labels: { show: false },
+        axisBorder: { show: false },
+      },
+      {
+        seriesName: '혈당 (mg/dL)',
+        opposite: true,
+        title: { text: '혈당 (mg/dL)', style: { color: 'var(--bs-danger)', fontSize: '12px' } },
+        labels: {
+          style: { colors: 'var(--bs-danger)', fontSize: '11px' },
+          formatter: (value) => value ? value.toFixed(0) : '',
+        },
+        axisBorder: { show: true, color: 'var(--bs-danger)' },
+      },
+      {
+        seriesName: '수축 혈압',
+        title: { text: '수축 혈압 (mmHg)', style: { color: 'var(--bs-warning)', fontSize: '12px' } },
+        labels: {
+          style: { colors: 'var(--bs-warning)', fontSize: '11px' },
+          formatter: (value) => value ? value.toFixed(0) : '',
+        },
+        axisBorder: { show: true, color: 'var(--bs-warning)' },
+      },
+      {
+        seriesName: '이완 혈압',
+        opposite: true,
+        title: { text: '이완 혈압 (mmHg)', style: { color: 'var(--bs-purple, var(--bs-indigo))', fontSize: '12px' } },
+        labels: {
+          style: { colors: 'var(--bs-purple, var(--bs-indigo))', fontSize: '11px' },
+          formatter: (value) => value ? value.toFixed(0) : '',
+        },
+        axisBorder: { show: true, color: 'var(--bs-purple, var(--bs-indigo))' },
+      },
+    ],
+    colors: ['var(--bs-info)', '#00d2d3', 'var(--bs-danger)', 'var(--bs-warning)', 'var(--bs-purple, var(--bs-indigo))'],
+    stroke: { curve: 'smooth', width: [3, 2, 3, 2, 2], dashArray: [0, 6, 0, 0, 0] },
+    markers: { size: 4, hover: { size: 7 } },
+    tooltip: {
+      shared: true,
+      intersect: false,
+      theme: theme.mode,
+      y: [
+        { formatter: (value) => value != null ? value.toFixed(1) + ' kg' : '-' },
+        { formatter: (value) => value != null ? value.toFixed(1) + ' kg' : '-' },
+        { formatter: (value) => value != null ? value.toFixed(0) + ' mg/dL' : '-' },
+        { formatter: (value) => value != null ? value.toFixed(0) + ' mmHg' : '-' },
+        { formatter: (value) => value != null ? value.toFixed(0) + ' mmHg' : '-' },
+      ],
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: 100,
+          yAxisIndex: 1,
+          borderColor: 'var(--bs-warning)',
+          borderWidth: 1,
+          strokeDashArray: 4,
+          label: {
+            text: '경계 100',
+            position: 'right',
+            style: { color: 'var(--bs-warning)', background: theme.annotationBg, fontSize: '10px' },
+          },
+        },
+        {
+          y: 126,
+          yAxisIndex: 1,
+          borderColor: 'var(--bs-danger)',
+          borderWidth: 1,
+          strokeDashArray: 4,
+          label: {
+            text: '주의 126',
+            position: 'right',
+            style: { color: 'var(--bs-danger)', background: theme.annotationBg, fontSize: '10px' },
+          },
+        },
+        {
+          y: 140,
+          yAxisIndex: 2,
+          borderColor: 'var(--bs-warning)',
+          borderWidth: 1,
+          strokeDashArray: 4,
+          label: {
+            text: '수축 140',
+            position: 'left',
+            style: { color: 'var(--bs-warning)', background: theme.annotationBg, fontSize: '10px' },
+          },
+        },
+        {
+          y: 90,
+          yAxisIndex: 2,
+          borderColor: 'var(--bs-purple, var(--bs-indigo))',
+          borderWidth: 1,
+          strokeDashArray: 4,
+          label: {
+            text: '이완 90',
+            position: 'left',
+            style: { color: 'var(--bs-purple, var(--bs-indigo))', background: theme.annotationBg, fontSize: '10px' },
+          },
+        },
+      ],
+    },
+    legend: { labels: { colors: theme.textColor } },
+    grid: { borderColor: theme.gridColor },
+    theme: { mode: theme.mode },
+  });
+
+  healthChart.render();
+}
+
+document.getElementById('healthQuickLogDate')?.addEventListener('change', (event) => {
+  fillHealthForm(event.target.value);
+});
+
+function bindHealthThemeListener() {
+  document.addEventListener('cs:theme-changed', function() {
+    renderHealthChart(getWeightGoal());
+  });
+}
+
+if (typeof window.whenCsThemeReady === 'function') {
+  window.whenCsThemeReady(bindHealthThemeListener);
+} else {
+  bindHealthThemeListener();
+}
+
+document.getElementById('btnFocusHealthForm')?.addEventListener('click', () => {
+  const quickDateInput = document.getElementById('healthQuickLogDate');
+  if (quickDateInput) {
+    document.getElementById('health-overview-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    quickDateInput.focus();
+  }
+});
+
+const goalInput = document.getElementById('weightGoalInput');
+if (goalInput) {
+  goalInput.value = getWeightGoal();
+  goalInput.addEventListener('change', (event) => {
+    const nextValue = parseFloat(event.target.value);
+    if (!Number.isFinite(nextValue)) {
+      return;
+    }
+    localStorage.setItem('personal-health-weight-goal', String(nextValue));
+    renderHealthChart(nextValue);
+  });
+}
+
+renderHealthChart(getWeightGoal());
+const quickDateInput = document.getElementById('healthQuickLogDate');
+if (quickDateInput) {
+  fillHealthForm(quickDateInput.value || '');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% block title %}대출 관리{% endblock %}
+{% block page_title %}대출 관리{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{{ url_for('personal.finance') }}" class="btn btn-sm cs-inline-0223"
+    >
+    <i class="bi bi-arrow-left me-1"></i>가계부
+  </a>
+  <a href="{{ url_for('personal.payment_accounts') }}" class="btn btn-sm cs-inline-0331"
+    >
+    <i class="bi bi-credit-card me-1"></i>통장/카드
+  </a>
+  <button class="btn btn-sm btn-primary cs-inline-0212" data-bs-toggle="modal" data-bs-target="#addModal"
+         >
+    <i class="bi bi-plus-lg me-1"></i>대출 추가
+  </button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── 요약 배너 ── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-danger);">
+      <div class="cs-summary-label">총 잔여 부채</div>
+      <div class="cs-summary-value">
+        {{ '{:,.0f}'.format(total_debt) }}<span class="cs-summary-unit">원</span>
+      </div>
+      <div class="cs-summary-meta">상환 중 합계</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-warning);">
+      <div class="cs-summary-label">월 납입 합계</div>
+      <div class="cs-summary-value">
+        {{ '{:,.0f}'.format(total_monthly) }}<span class="cs-summary-unit">원</span>
+      </div>
+      <div class="cs-summary-meta">매월 지출</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-primary);">
+      <div class="cs-summary-label">상환 중</div>
+      <div class="cs-summary-value">
+        {{ loans | selectattr('is_active') | list | length }}
+      </div>
+      <div class="cs-summary-meta">건</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="glass-card cs-summary-card" style="--cs-summary-color:var(--bs-secondary);">
+      <div class="cs-summary-label">상환 완료</div>
+      <div class="cs-summary-value">
+        {{ loans | rejectattr('is_active') | list | length }}
+      </div>
+      <div class="cs-summary-meta">건</div>
+    </div>
+  </div>
+</div>
+
+{# ── 대출 목록 ── #}
+<div class="glass-card">
+  <div class="card-header">
+    <i class="bi bi-bank me-2 text-danger"></i>대출 목록
+    <span class="badge ms-2 cs-inline-0338"
+         >
+      {{ loans|length }}건
+    </span>
+  </div>
+
+  {% if loans %}
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>기관</th>
+          <th>상품명</th>
+          <th class="text-end">원금</th>
+          <th class="text-end">잔여원금</th>
+          <th class="text-end">월 납입</th>
+          <th class="text-center">이율</th>
+          <th class="text-center">만기일</th>
+          <th class="text-center">상태</th>
+          <th class="text-center cs-inline-0339">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in loans %}
+        <tr style="opacity:{{ '1' if l.is_active else '0.45' }};">
+          <td class="cs-inline-0340">{{ l.lender_name }}</td>
+          <td>
+            <div class="cs-inline-0341">{{ l.loan_name }}</div>
+            {% if l.notes %}
+            <div class="cs-inline-0300">{{ l.notes }}</div>
+            {% endif %}
+          </td>
+          <td class="text-end cs-inline-0342">
+            {{ '{:,.0f}'.format(l.principal) }}원
+          </td>
+          <td class="text-end cs-inline-0343">
+            {% set rem = l.remaining or l.principal %}
+            {{ '{:,.0f}'.format(rem) }}원
+          </td>
+          <td class="text-end cs-inline-0141">
+            {% if l.monthly_payment %}
+              {{ '{:,.0f}'.format(l.monthly_payment) }}원
+            {% else %}
+              <span class="cs-inline-0125">-</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if l.interest_rate %}
+              <span class="cs-inline-0032">{{ l.interest_rate }}%</span>
+            {% else %}
+              <span class="cs-inline-0125">-</span>
+            {% endif %}
+          </td>
+          <td class="text-center cs-inline-0032">
+            {% if l.end_date %}
+              {% set days_left = (l.end_date - today).days %}
+              {{ l.end_date.strftime('%y.%m.%d') }}
+              {% if days_left >= 0 and l.is_active %}
+              <div style="font-size:.65rem;" class="{{ 'text-danger' if days_left <= 30 else 'text-body-secondary' }}">
+                D-{{ days_left }}
+              </div>
+              {% endif %}
+            {% else %}
+              <span class="cs-inline-0125">-</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if l.is_active %}
+            <span class="badge cs-inline-0344">
+              상환 중
+            </span>
+            {% else %}
+            <span class="badge cs-inline-0345">
+              완료
+            </span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <button class="btn btn-sm edit-btn cs-inline-0346"
+                     
+                      data-id="{{ l.id }}"
+                      data-lender="{{ l.lender_name }}"
+                      data-name="{{ l.loan_name }}"
+                      data-principal="{{ l.principal }}"
+                      data-remaining="{{ l.remaining or '' }}"
+                      data-rate="{{ l.interest_rate or '' }}"
+                      data-monthly="{{ l.monthly_payment or '' }}"
+                      data-start="{{ l.start_date.isoformat() if l.start_date else '' }}"
+                      data-end="{{ l.end_date.isoformat() if l.end_date else '' }}"
+                      data-active="{{ '1' if l.is_active else '0' }}"
+                      data-notes="{{ l.notes or '' }}">
+                <i class="bi bi-pencil cs-inline-0043"></i>
+              </button>
+              <form method="POST"
+                    action="{{ url_for('personal.loan_delete', lid=l.id) }}"
+                    data-cs-onsubmit="return confirm('대출 항목을 삭제하시겠습니까?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm cs-inline-0347"
+                       >
+                  <i class="bi bi-trash3 cs-inline-0043"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5 cs-inline-0125">
+    <i class="bi bi-bank cs-inline-0126"></i>
+    <p class="mt-3 mb-3 cs-inline-0067">등록된 대출 내역이 없습니다</p>
+    <button class="btn btn-sm btn-primary cs-inline-0072" data-bs-toggle="modal" data-bs-target="#addModal"
+           >대출 추가하기</button>
+  </div>
+  {% endif %}
+</div>
+
+
+{# ══════════════════════════════════════════════════
+   대출 추가 모달
+   ══════════════════════════════════════════════════ #}
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0053">
+          <i class="bi bi-plus-circle me-2 text-danger"></i>대출 추가
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('personal.loan_add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col-5">
+              <label class="form-label cs-inline-0032">대출 기관 <span class="cs-inline-0070">*</span></label>
+              <input type="text" name="lender_name" class="form-control cs-input"
+                     placeholder="예: 국민은행" required maxlength="100">
+            </div>
+            <div class="col-7">
+              <label class="form-label cs-inline-0032">상품명 <span class="cs-inline-0070">*</span></label>
+              <input type="text" name="loan_name" class="form-control cs-input"
+                     placeholder="예: 신용대출, 주택담보대출" required maxlength="200">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">원금 (원) <span class="cs-inline-0070">*</span></label>
+              <input type="number" name="principal" class="form-control cs-input"
+                     placeholder="0" min="0" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">잔여원금 (원)</label>
+              <input type="number" name="remaining" class="form-control cs-input"
+                     placeholder="없으면 원금과 동일" min="0">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">연 이율 (%)</label>
+              <input type="number" name="interest_rate" class="form-control cs-input"
+                     placeholder="예: 4.5" step="0.001" min="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">월 납입액 (원)</label>
+              <input type="number" name="monthly_payment" class="form-control cs-input"
+                     placeholder="0" min="0">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">대출 개시일</label>
+              <input type="date" name="start_date" class="form-control cs-input">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">만기일</label>
+              <input type="date" name="end_date" class="form-control cs-input">
+            </div>
+          </div>
+          <div class="mb-1">
+            <label class="form-label cs-inline-0032">비고 (선택)</label>
+            <input type="text" name="notes" class="form-control cs-input"
+                   placeholder="선택 입력" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer cs-inline-0245">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="submit" class="btn btn-sm btn-danger cs-inline-0072"
+                 >등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+{# ══════════════════════════════════════════════════
+   대출 수정 모달
+   ══════════════════════════════════════════════════ #}
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content cs-modal">
+      <div class="modal-header cs-inline-0216">
+        <h5 class="modal-title cs-inline-0053">
+          <i class="bi bi-pencil me-2 text-warning"></i>대출 수정
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editForm" action="#">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col-5">
+              <label class="form-label cs-inline-0032">대출 기관</label>
+              <input type="text" name="lender_name" id="editLender"
+                     class="form-control cs-input" required maxlength="100">
+            </div>
+            <div class="col-7">
+              <label class="form-label cs-inline-0032">상품명</label>
+              <input type="text" name="loan_name" id="editName"
+                     class="form-control cs-input" required maxlength="200">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">원금 (원)</label>
+              <input type="number" name="principal" id="editPrincipal"
+                     class="form-control cs-input" min="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">잔여원금 (원)</label>
+              <input type="number" name="remaining" id="editRemaining"
+                     class="form-control cs-input" min="0">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">연 이율 (%)</label>
+              <input type="number" name="interest_rate" id="editRate"
+                     class="form-control cs-input" step="0.001" min="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">월 납입액 (원)</label>
+              <input type="number" name="monthly_payment" id="editMonthly"
+                     class="form-control cs-input" min="0">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">대출 개시일</label>
+              <input type="date" name="start_date" id="editStart"
+                     class="form-control cs-input">
+            </div>
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">만기일</label>
+              <input type="date" name="end_date" id="editEnd"
+                     class="form-control cs-input">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label cs-inline-0032">상태</label>
+              <select name="is_active" id="editActive" class="form-select cs-input">
+                <option value="1">상환 중</option>
+                <option value="0">상환 완료</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-1">
+            <label class="form-label cs-inline-0032">비고</label>
+            <input type="text" name="notes" id="editNotes"
+                   class="form-control cs-input" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer cs-inline-0245">
+          <button type="button" class="btn btn-sm cs-inline-0220" data-bs-dismiss="modal"
+                 >취소</button>
+          <button type="submit" class="btn btn-sm btn-primary cs-inline-0072"
+                 >저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+/* 수정 버튼 클릭 → 모달 필드 채우기 */
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('editLender').value    = btn.dataset.lender;
+    document.getElementById('editName').value      = btn.dataset.name;
+    document.getElementById('editPrincipal').value = btn.dataset.principal;
+    document.getElementById('editRemaining').value = btn.dataset.remaining;
+    document.getElementById('editRate').value      = btn.dataset.rate;
+    document.getElementById('editMonthly').value   = btn.dataset.monthly;
+    document.getElementById('editStart').value     = btn.dataset.start;
+    document.getElementById('editEnd').value       = btn.dataset.end;
+    document.getElementById('editActive').value    = btn.dataset.active;
+    document.getElementById('editNotes').value     = btn.dataset.notes;
+    document.getElementById('editForm').action =
+      `/personal/finance/loans/${btn.dataset.id}/edit`;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+  });
+});
+</script>
+{% endblock %}

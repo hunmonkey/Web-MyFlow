@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from flask import Flask, g
 
 from config import config_map
-from app.extensions import db
-from app.models import Profile, Project
+from app.extensions import db, login_manager, csrf
+from app.models import Profile, Project, User
 
 _WEAK_SECRET_KEY_VALUES = {
     "",
@@ -65,6 +65,19 @@ def _seed_default_content(app: Flask) -> None:
             ]
         )
 
+    if User.query.count() == 0:
+        admin_username = os.environ.get("ADMIN_USERNAME") or "admin"
+        admin_password = os.environ.get("ADMIN_PASSWORD") or "change-me-now"
+        admin_display = app.config.get("OWNER_NAME") or "관리자"
+        admin = User(
+            username=admin_username,
+            display_name=admin_display,
+            is_active=True,
+            is_admin=True,
+        )
+        admin.set_password(admin_password)
+        db.session.add(admin)
+
     db.session.commit()
 
 
@@ -87,12 +100,20 @@ def create_app(env_name: str | None = None) -> Flask:
     (Path(app.root_path).parent / "instance").mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id: str):
+        return User.query.get(int(user_id))
 
     from app.routes import main_bp
     from app.routes_personal import personal_bp
+    from app.routes_auth import auth_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(personal_bp)
+    app.register_blueprint(auth_bp)
 
     @app.context_processor
     def inject_csp_nonce():

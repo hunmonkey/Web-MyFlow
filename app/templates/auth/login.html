@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko" data-bs-theme="dark" data-cs-theme="dark" data-cs-theme-ready="0">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 | Personal</title>
+  <script nonce="{{ csp_nonce }}">
+    (function(){
+      var html = document.documentElement;
+      var theme = 'light';
+      try {
+        var saved = localStorage.getItem('cs-theme-mode');
+        if (saved === 'light' || saved === 'dark') {
+          theme = saved;
+        }
+      } catch(e) {}
+      html.setAttribute('data-cs-theme', theme);
+      html.setAttribute('data-bs-theme', theme);
+      html.style.colorScheme = theme;
+      html.setAttribute('data-cs-theme-ready', '1');
+      window.__csThemeMode = theme;
+      window.__csThemeReady = true;
+
+      window.whenCsThemeReady = window.whenCsThemeReady || function(cb) {
+        if (window.__csThemeReady) {
+          cb(theme);
+          return;
+        }
+        document.addEventListener('cs:theme-ready', function(e){
+          cb((e && e.detail && e.detail.mode) || theme);
+        }, {once: true});
+      };
+
+      document.dispatchEvent(new CustomEvent('cs:theme-ready', {detail:{mode:theme}}));
+    })();
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+</head>
+<body>
+  <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="테마 전환" title="테마 전환">
+    <i id="themeToggleIcon" class="bi bi-moon-stars"></i>
+  </button>
+
+  <div class="login-stage" id="loginStage">
+    <div class="login-card" id="loginCard">
+      <div class="terminal-head warp-fade">
+        <div class="login-logo">
+          <i class="bi bi-house-heart"></i>
+        </div>
+        <div class="brand-title-wrap">
+          <div class="terminal-kicker">PERSONAL</div>
+          <h1 class="brand-title glitch" data-text="개인 관리 시스템">개인 관리 시스템</h1>
+          <p class="terminal-subtext" id="terminalText" data-text="인증받은 사용자만 접속이 허용됩니다."></p>
+        </div>
+      </div>
+
+      <div class="status-line warp-fade">
+        <span class="status-dot"></span>
+        <span>가동 상황</span>
+      </div>
+
+      <div class="jump-status warp-fade" id="jumpStatus" data-state="idle" aria-live="polite">
+        <div class="jump-status__head">
+          <span class="jump-status__label" id="jumpStatusLabel">입력 대기 · 계정 정보를 준비해 주세요.</span>
+          <span class="jump-status__step" id="jumpStatusStep">20%</span>
+        </div>
+        <div class="jump-status__track" aria-hidden="true">
+          <span class="jump-status__bar" id="jumpStatusBar"></span>
+        </div>
+      </div>
+
+      <div id="flashArea">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert warp-fade alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" data-loading-text="로그인 중..." novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
+        <div class="mb-3">
+          <label class="form-label">아이디</label>
+          <div class="input-shell">
+            <i class="bi bi-person"></i>
+            <input type="text" name="username" class="form-control cs-input warp-fade"
+                   placeholder="아이디를 입력해 주세요" autocomplete="username" required autofocus>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">비밀번호</label>
+          <div class="input-shell">
+            <i class="bi bi-shield-lock"></i>
+            <input type="password" name="password" class="form-control cs-input warp-fade"
+                   placeholder="비밀번호를 입력해 주세요" autocomplete="current-password" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-login w-100 warp-fade" id="loginSubmitBtn" data-state="idle" data-ready="false" data-loading-text="로그인 중..." disabled aria-disabled="true">
+          <span class="btn-login__beam" aria-hidden="true"></span>
+          <span class="btn-login__sheen" aria-hidden="true"></span>
+          <span class="btn-login__content">
+            <span class="btn-login__icon-shell" aria-hidden="true">
+              <i class="bi bi-shield-lock" id="loginBtnIcon"></i>
+              <span class="btn-login__spinner" id="loginBtnSpinner"></span>
+            </span>
+            <span class="btn-login__labels">
+              <span class="btn-login__label" id="loginBtnLabel">접속</span>
+              <span class="btn-login__meta" id="loginBtnMeta"></span>
+            </span>
+          </span>
+          <span class="btn-login__progress" id="loginBtnProgress" aria-hidden="true"></span>
+        </button>
+      </form>
+
+      <p class="footline warp-fade">황재훈 님의 개인 공간</p>
+    </div>
+  </div>
+
+  <div id="warp-flash-overlay" aria-hidden="true"></div>
+
+  <script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script nonce="{{ csp_nonce }}">
+    (function () {
+      const loginStage = document.getElementById("loginStage");
+      const card = document.getElementById("loginCard");
+      const loginBtn = document.getElementById("loginSubmitBtn");
+      const loginBtnIcon = document.getElementById("loginBtnIcon");
+      const loginBtnLabel = document.getElementById("loginBtnLabel");
+      const loginBtnMeta = document.getElementById("loginBtnMeta");
+      const loginForm = document.getElementById("loginForm");
+      const terminalText = document.getElementById("terminalText");
+      const flashArea = document.getElementById("flashArea");
+      const warpFlashOverlay = document.getElementById("warp-flash-overlay");
+      const jumpStatus = document.getElementById("jumpStatus");
+      const jumpStatusLabel = document.getElementById("jumpStatusLabel");
+      const jumpStatusStep = document.getElementById("jumpStatusStep");
+      const jumpStatusBar = document.getElementById("jumpStatusBar");
+      const usernameInput = loginForm?.querySelector('input[name="username"]');
+      const passwordInput = loginForm?.querySelector('input[name="password"]');
+      const csrfToken = loginForm?.querySelector('input[name="csrf_token"]')?.value || "";
+      const defaultTerminalText = terminalText?.dataset.text || "";
+      const idleStatusLabel = "입력 대기 · 계정 정보를 준비해 주세요.";
+      const idleStatusStep = "20%";
+      const idleButtonLabel = "접속";
+      const idleButtonMeta = "";
+      const warpTransitionMs = 320;
+      let isSubmitting = false;
+      let isWarping = false;
+      let terminalTypingToken = 0;
+
+      const bootstrapCategoryClassMap = {
+        success: "alert-success",
+        danger: "alert-danger",
+        warning: "alert-warning",
+        info: "alert-primary",
+        primary: "alert-primary",
+      };
+
+      const normalizeInternalUrl = function (targetUrl) {
+        if (!targetUrl) return "/";
+        try {
+          const parsedUrl = new URL(targetUrl, window.location.origin);
+          if (parsedUrl.origin !== window.location.origin) return "/";
+          return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+        } catch (error) {
+          return "/";
+        }
+      };
+
+      const setTerminalMessage = function (message) {
+        terminalTypingToken += 1;
+        if (!terminalText) return;
+        terminalText.textContent = message;
+      };
+
+      const typeTerminalMessage = function (message, delayMs) {
+        if (!terminalText) return;
+        terminalTypingToken += 1;
+        const currentToken = terminalTypingToken;
+        terminalText.textContent = "";
+        let index = 0;
+        const typeNext = function () {
+          if (currentToken !== terminalTypingToken) return;
+          terminalText.textContent = message.slice(0, index);
+          index += 1;
+          if (index <= message.length) window.setTimeout(typeNext, 34);
+        };
+        window.setTimeout(typeNext, delayMs || 0);
+      };
+
+      const setStatusState = function (state, label, step, progress) {
+        if (jumpStatus) jumpStatus.dataset.state = state;
+        if (jumpStatusLabel && typeof label === "string") jumpStatusLabel.textContent = label;
+        if (jumpStatusStep && typeof step === "string") jumpStatusStep.textContent = step;
+        if (jumpStatusBar && typeof progress === "number") jumpStatusBar.style.width = progress + "%";
+        if (loginBtn && typeof progress === "number") loginBtn.style.setProperty("--btn-progress", progress + "%");
+      };
+
+      const setButtonState = function (state, label, meta, iconClass, progress) {
+        if (!loginBtn) return;
+        loginBtn.dataset.state = state;
+        if (loginBtnLabel && typeof label === "string") loginBtnLabel.textContent = label;
+        if (loginBtnMeta && typeof meta === "string") loginBtnMeta.textContent = meta;
+        if (loginBtnIcon && iconClass) loginBtnIcon.className = iconClass;
+        if (typeof progress === "number") loginBtn.style.setProperty("--btn-progress", progress + "%");
+      };
+
+      const setButtonAvailability = function (isReady) {
+        if (!loginBtn) return;
+        loginBtn.dataset.ready = isReady ? "true" : "false";
+        loginBtn.disabled = !isReady;
+        loginBtn.setAttribute("aria-disabled", isReady ? "false" : "true");
+      };
+
+      const resetCardTilt = function (durationMs) {
+        if (!card) return;
+        card.style.transition = "transform " + durationMs + "ms ease";
+        card.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg)";
+      };
+
+      const getInputProgressState = function () {
+        const hasUsername = Boolean((usernameInput?.value || "").trim());
+        const hasPassword = Boolean(passwordInput?.value || "");
+        if (hasUsername && hasPassword) {
+          return { state: "ready", label: "입력 완료 · 접속 버튼을 눌러 주세요.", step: "100%", progress: 100 };
+        }
+        if (hasUsername) {
+          return { state: "ready", label: "아이디 확인 · 비밀번호 입력을 기다립니다.", step: "60%", progress: 60 };
+        }
+        if (hasPassword) {
+          return { state: "ready", label: "비밀번호 확인 · 아이디 입력을 기다립니다.", step: "60%", progress: 60 };
+        }
+        return { state: "idle", label: idleStatusLabel, step: idleStatusStep, progress: 20 };
+      };
+
+      const syncInputProgress = function (options) {
+        const config = options || {};
+        if (isSubmitting || isWarping) return;
+        const inputState = getInputProgressState();
+        const isReady = inputState.progress === 100;
+        setStatusState(inputState.state, inputState.label, inputState.step, inputState.progress);
+        setButtonAvailability(isReady);
+        setButtonState(inputState.state, idleButtonLabel, idleButtonMeta, isReady ? "bi bi-box-arrow-in-right" : "bi bi-shield-lock", inputState.progress);
+        if (!config.keepTerminalText) setTerminalMessage(defaultTerminalText);
+        if (!config.keepFlash && flashArea) flashArea.innerHTML = "";
+      };
+
+      const clearFormState = function (options) {
+        const config = options || {};
+        const inputState = getInputProgressState();
+        isSubmitting = false;
+        if (loginBtn) {
+          loginBtn.classList.remove("cs-ui-loading");
+          loginBtn.removeAttribute("aria-busy");
+          setButtonAvailability(inputState.progress === 100);
+          setButtonState("idle", idleButtonLabel, idleButtonMeta, inputState.progress === 100 ? "bi bi-box-arrow-in-right" : "bi bi-shield-lock", inputState.progress);
+        }
+        if (!isWarping && loginStage) loginStage.classList.remove("is-authenticating", "is-jumping");
+        if (!config.keepStatus) setStatusState(inputState.state, inputState.label, inputState.step, inputState.progress);
+        if (!config.keepTerminalText) setTerminalMessage(defaultTerminalText);
+        if (card && !config.keepErrorState) card.classList.remove("is-error");
+        if (card && !isWarping) {
+          card.style.pointerEvents = "";
+          card.querySelectorAll(".warp-fade").forEach(function (node) { node.classList.remove("is-dimming"); });
+        }
+        if (warpFlashOverlay && !isWarping) warpFlashOverlay.classList.remove("warp-active");
+        if (document.body && !isWarping) document.body.classList.remove("warp-transitioning");
+      };
+
+      const setFlash = function (message, category) {
+        if (!flashArea) return;
+        flashArea.innerHTML = "";
+        const alertDiv = document.createElement("div");
+        const alertClass = bootstrapCategoryClassMap[category] || "alert-danger";
+        alertDiv.className = "alert " + alertClass + " alert-dismissible fade show warp-fade";
+        alertDiv.setAttribute("role", "alert");
+        alertDiv.textContent = message;
+        const closeButton = document.createElement("button");
+        closeButton.setAttribute("type", "button");
+        closeButton.className = "btn-close";
+        closeButton.setAttribute("data-bs-dismiss", "alert");
+        closeButton.setAttribute("aria-label", "닫기");
+        closeButton.addEventListener("click", function () { alertDiv.remove(); });
+        alertDiv.appendChild(closeButton);
+        flashArea.appendChild(alertDiv);
+      };
+
+      const triggerCardError = function () {
+        if (!card) return;
+        card.classList.remove("is-error");
+        void card.offsetWidth;
+        card.classList.add("is-error");
+        window.setTimeout(function () { card.classList.remove("is-error"); }, 620);
+      };
+
+      const handleLoginFailure = function (message, category, statusState, statusLabel, statusStep, progress, terminalMessage) {
+        setFlash(message, category);
+        triggerCardError();
+        setStatusState(statusState, statusLabel, statusStep, progress);
+        setTerminalMessage(terminalMessage || "입력한 정보를 다시 확인해 주세요.");
+        clearFormState({ keepStatus: true, keepTerminalText: true, keepErrorState: true });
+      };
+
+      const beginWarpTransition = function (targetUrl, successMessage) {
+        const safeUrl = normalizeInternalUrl(targetUrl);
+        if (isWarping) return;
+        isWarping = true;
+        isSubmitting = false;
+        if (!loginBtn) { window.location.assign(safeUrl); return; }
+        loginBtn.classList.add("cs-ui-loading");
+        loginBtn.dataset.ready = "true";
+        loginBtn.disabled = true;
+        loginBtn.setAttribute("aria-busy", "true");
+        setButtonState("success", "접속", "", "bi bi-stars", 100);
+        setStatusState("success", "인증 완료 · 대시보드로 이동합니다.", "이동", 100);
+        setTerminalMessage(successMessage || "접근 승인 완료. 대시보드로 이동합니다.");
+        if (loginStage) loginStage.classList.add("is-authenticating", "is-jumping");
+        if (card) { card.style.pointerEvents = "none"; resetCardTilt(90); }
+        if (document.body) document.body.classList.add("warp-transitioning");
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(function () {
+            if (loginStage) loginStage.classList.add("is-jumping");
+            if (card) {
+              card.querySelectorAll(".warp-fade").forEach(function (node) { node.classList.add("is-dimming"); });
+            }
+            if (warpFlashOverlay) warpFlashOverlay.classList.add("warp-active");
+          });
+        });
+        window.setTimeout(function () { window.location.assign(safeUrl); }, warpTransitionMs);
+      };
+
+      const startAjaxSubmit = async function (event) {
+        event.preventDefault();
+        if (isSubmitting || isWarping) return;
+        if (!loginForm || !loginBtn) { clearFormState(); return; }
+        const usernameValue = (usernameInput?.value || "").trim();
+        const passwordValue = passwordInput?.value || "";
+        const inputState = getInputProgressState();
+        if (!usernameValue || !passwordValue) {
+          handleLoginFailure("아이디와 비밀번호를 모두 입력해 주세요.", "warning", "warning", "입력 정보가 부족합니다. 필수 항목을 먼저 채워 주세요.", "입력", inputState.progress, "아이디와 비밀번호를 먼저 입력한 뒤 다시 시도해 주세요.");
+          return;
+        }
+        isSubmitting = true;
+        loginBtn.classList.add("cs-ui-loading");
+        loginBtn.dataset.ready = "true";
+        loginBtn.disabled = true;
+        loginBtn.setAttribute("aria-busy", "true");
+        setButtonState("loading", "접속 확인 중", "", "bi bi-arrow-repeat", 100);
+        setStatusState("authenticating", "인증 정보와 접근 권한을 확인하고 있습니다.", "확인", 100);
+        setTerminalMessage("계정 정보와 접근 권한을 점검하고 있습니다.");
+        if (flashArea) flashArea.innerHTML = "";
+        if (loginStage) loginStage.classList.add("is-authenticating");
+        if (card) { card.classList.remove("is-error"); card.style.pointerEvents = "none"; resetCardTilt(160); }
+        const formData = new FormData(loginForm);
+        try {
+          const response = await fetch(loginForm.action, {
+            method: "POST",
+            headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRFToken": csrfToken },
+            credentials: "same-origin",
+            redirect: "follow",
+            body: formData,
+          });
+          const contentType = response.headers.get("content-type") || "";
+          if (response.redirected) { beginWarpTransition(response.url, "접근 승인 완료. 대시보드로 이동합니다."); return; }
+          if (response.status === 429) { handleLoginFailure("로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.", "warning", "warning", "요청이 너무 많습니다.", "대기", inputState.progress, "잠시 기다린 뒤 다시 시도해 주세요."); return; }
+          if (response.status >= 500) { handleLoginFailure("서버가 응답을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.", "danger", "warning", "서버 응답이 매끄럽지 않습니다.", "복구", inputState.progress, "서버 상태를 다시 정리한 뒤 재시도해 주세요."); return; }
+          if (!contentType.includes("application/json")) {
+            if (response.ok && response.url) {
+              try {
+                const parsedUrl = new URL(response.url);
+                if (parsedUrl.pathname !== window.location.pathname) { beginWarpTransition(parsedUrl.pathname + parsedUrl.search + parsedUrl.hash, "접근 승인 완료. 대시보드로 이동합니다."); return; }
+              } catch (error) {}
+            }
+            handleLoginFailure("아이디 또는 비밀번호가 맞지 않습니다.", "danger", "error", "인증 실패 · 입력 정보를 다시 확인해 주세요.", "재시도", inputState.progress, "입력한 아이디와 비밀번호를 다시 확인해 주세요.");
+            return;
+          }
+          const payload = await response.json();
+          if (payload.success) { beginWarpTransition(payload.redirect_url || "/", payload.message || "접근 승인 완료. 대시보드로 이동합니다."); return; }
+          handleLoginFailure(payload.message || "로그인 실패", "danger", "error", "인증 실패 · 입력 정보를 다시 확인해 주세요.", "재시도", inputState.progress, "입력한 아이디와 비밀번호를 다시 확인해 주세요.");
+        } catch (error) {
+          handleLoginFailure("로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", "danger", "warning", "네트워크 또는 서버 연결이 흔들렸습니다.", "복구", inputState.progress, "연결 상태를 확인한 뒤 잠시 후 다시 시도해 주세요.");
+        }
+      };
+
+      syncInputProgress({ keepFlash: true, keepTerminalText: true });
+      typeTerminalMessage(defaultTerminalText, 280);
+      window.setTimeout(function () { syncInputProgress({ keepFlash: true, keepTerminalText: true }); }, 180);
+
+      if (card) {
+        const maxTilt = 7;
+        card.addEventListener("mousemove", function (event) {
+          if (isSubmitting || isWarping) return;
+          const rect = card.getBoundingClientRect();
+          const x = (event.clientX - rect.left) / rect.width;
+          const y = (event.clientY - rect.top) / rect.height;
+          const rotateY = (x - 0.5) * (maxTilt * 2);
+          const rotateX = (0.5 - y) * (maxTilt * 2);
+          card.style.transition = "transform 0.08s ease";
+          card.style.transform = "perspective(1200px) rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + rotateY.toFixed(2) + "deg)";
+        });
+        card.addEventListener("mouseleave", function () { if (!isWarping) resetCardTilt(500); });
+      }
+
+      if (loginForm) loginForm.addEventListener("submit", startAjaxSubmit);
+
+      [usernameInput, passwordInput].forEach(function (field) {
+        if (!field) return;
+        field.addEventListener("input", function () { syncInputProgress(); });
+        field.addEventListener("change", function () { syncInputProgress(); });
+      });
+
+      // 테마 토글
+      const themeToggleBtn = document.getElementById("themeToggleBtn");
+      const themeToggleIcon = document.getElementById("themeToggleIcon");
+      const updateThemeIcon = function () {
+        const mode = document.documentElement.getAttribute("data-cs-theme") || "light";
+        if (themeToggleIcon) themeToggleIcon.className = mode === "dark" ? "bi bi-sun" : "bi bi-moon-stars";
+      };
+      if (themeToggleBtn) {
+        updateThemeIcon();
+        themeToggleBtn.addEventListener("click", function () {
+          const current = document.documentElement.getAttribute("data-cs-theme") || "light";
+          const next = current === "dark" ? "light" : "dark";
+          document.documentElement.setAttribute("data-cs-theme", next);
+          document.documentElement.setAttribute("data-bs-theme", next);
+          document.documentElement.style.colorScheme = next;
+          window.__csThemeMode = next;
+          try { localStorage.setItem("cs-theme-mode", next); } catch (e) {}
+          updateThemeIcon();
+        });
+      }
+
+      if (loginBtn) {
+        loginBtn.addEventListener("mousemove", function (event) {
+          if (isWarping) return;
+          const rect = loginBtn.getBoundingClientRect();
+          loginBtn.style.setProperty("--mx", (event.clientX - rect.left) + "px");
+          loginBtn.style.setProperty("--my", (event.clientY - rect.top) + "px");
+        });
+        loginBtn.addEventListener("mouseleave", function () {
+          loginBtn.style.setProperty("--mx", "50%");
+          loginBtn.style.setProperty("--my", "50%");
+        });
+        loginBtn.addEventListener("pointerdown", function (event) {
+          if (loginBtn.disabled || isWarping) return;
+          const rect = loginBtn.getBoundingClientRect();
+          loginBtn.style.setProperty("--rx", (event.clientX - rect.left) + "px");
+          loginBtn.style.setProperty("--ry", (event.clientY - rect.top) + "px");
+          loginBtn.classList.remove("is-rippling");
+          window.requestAnimationFrame(function () { loginBtn.classList.add("is-rippling"); });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

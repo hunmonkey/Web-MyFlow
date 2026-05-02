@@ -1,0 +1,913 @@
+/*
+ * Companion ERP component rules
+ * Consolidated from page-specific CSS during UIUX cleanup.
+ * Canonical copy now also lives in companion.css for the normal ERP shell.
+ * This file remains for standalone pages that do not extend base.html.
+ */
+
+
+/* ===== component rules phase 4 ===== */
+
+/*
+ * UIUX Phase 4 - buttons, labels and form controls
+ * Loaded after page-specific CSS so the final component shape stays consistent.
+ */
+
+.form-label {
+  margin-bottom: .32rem;
+  color: var(--color-text-main);
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.form-control,
+.form-select,
+.cs-input,
+input.cs-input,
+textarea.cs-input,
+select.cs-input {
+  min-height: 40px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-input) !important;
+  background: var(--bg-input) !important;
+  color: var(--color-text-main) !important;
+  -webkit-text-fill-color: var(--color-text-main) !important;
+  box-shadow: none !important;
+  font-size: .88rem !important;
+  font-weight: 500;
+  line-height: 1.45;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+textarea.form-control,
+textarea.cs-input {
+  min-height: 108px !important;
+  line-height: 1.55;
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+.cs-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-secondary) !important;
+  -webkit-text-fill-color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.cs-input:focus,
+input.cs-input:focus,
+textarea.cs-input:focus,
+select.cs-input:focus {
+  border-color: var(--border-input-focus) !important;
+  background: var(--bg-card) !important;
+  color: var(--color-text-main) !important;
+  -webkit-text-fill-color: var(--color-text-main) !important;
+  box-shadow: 0 0 0 .18rem color-mix(in srgb, var(--border-input-focus) 18%, transparent) !important;
+  outline: none !important;
+}
+
+.form-control:disabled,
+.form-select:disabled,
+.cs-input:disabled,
+.form-control[readonly],
+.cs-input[readonly] {
+  background: var(--color-neutral-bg) !important;
+  border-color: var(--color-neutral-bd) !important;
+  color: var(--color-neutral-fg) !important;
+  -webkit-text-fill-color: var(--color-neutral-fg) !important;
+  opacity: 1;
+}
+
+.form-select option {
+  background: var(--bg-card);
+  color: var(--color-text-main);
+}
+
+.btn:not(.btn-close):not(.btn-link):not(.btn-login),
+.btn-neon,
+.btn-neon-danger,
+.cs-action-btn,
+.audit-action-btn {
+  min-height: 36px;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 700;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .28rem;
+}
+
+.btn-sm:not(.btn-close):not(.btn-link) {
+  min-height: 32px;
+  padding: .28rem .62rem;
+  font-size: .82rem;
+}
+
+.btn-primary,
+.btn.btn-primary,
+.btn-neon,
+.btn.finance-primary-btn,
+.btn.pipeline-primary-btn,
+.btn.asset-primary-btn,
+.btn.asset-detail-primary-btn,
+.btn.partner-action-primary,
+.cs-btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active,
+.btn-neon:hover,
+.btn-neon:focus,
+.btn-neon:active,
+.btn.finance-primary-btn:hover,
+.btn.pipeline-primary-btn:hover,
+.btn.asset-primary-btn:hover,
+.btn.asset-detail-primary-btn:hover,
+.btn.partner-action-primary:hover,
+.cs-btn-primary:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  color: var(--color-on-primary) !important;
+}
+
+.btn-outline-primary,
+.btn.btn-outline-primary,
+.btn-outline-secondary,
+.btn.btn-outline-secondary,
+.btn-outline-light,
+.btn.btn-outline-light,
+.btn-secondary,
+.btn.btn-secondary,
+.btn.finance-action-btn,
+.btn.pipeline-action-btn,
+.btn.asset-action-btn,
+.btn.asset-detail-action-btn,
+.btn.asset-soft-btn,
+.btn.cs-filter-btn,
+.cs-action-btn,
+.audit-action-btn,
+.cs-modal-cancel,
+.cs-btn-cancel {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--color-primary) !important;
+}
+
+.btn-outline-primary:hover,
+.btn.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn.btn-outline-secondary:hover,
+.btn-outline-light:hover,
+.btn.btn-outline-light:hover,
+.btn-secondary:hover,
+.btn.btn-secondary:hover,
+.btn.finance-action-btn:hover,
+.btn.pipeline-action-btn:hover,
+.btn.asset-action-btn:hover,
+.btn.asset-detail-action-btn:hover,
+.btn.asset-soft-btn:hover,
+.btn.cs-filter-btn:hover,
+.cs-action-btn:hover,
+.audit-action-btn:hover,
+.cs-modal-cancel:hover,
+.cs-btn-cancel:hover {
+  background: var(--bg-card-header) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-hover) !important;
+}
+
+.btn-danger,
+.btn.btn-danger {
+  background: var(--color-danger-bg) !important;
+  border-color: var(--color-danger-bd) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.btn-danger:hover,
+.btn.btn-danger:hover {
+  background: color-mix(in srgb, var(--color-danger-bg) 78%, var(--color-danger-fg)) !important;
+  border-color: var(--color-danger-fg) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.btn-outline-danger,
+.btn.btn-outline-danger,
+.btn-neon-danger,
+.btn.asset-danger-btn {
+  background: var(--bg-card) !important;
+  border-color: var(--color-danger-bd) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.btn-outline-danger:hover,
+.btn.btn-outline-danger:hover,
+.btn-neon-danger:hover,
+.btn.asset-danger-btn:hover {
+  background: var(--color-danger-bg) !important;
+  border-color: var(--color-danger-fg) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.btn:disabled,
+.btn.disabled,
+fieldset:disabled .btn,
+.btn-neon:disabled,
+.btn-neon-danger:disabled,
+.cs-action-btn:disabled,
+.audit-action-btn:disabled {
+  background: var(--color-neutral-bg) !important;
+  border-color: var(--color-neutral-bd) !important;
+  color: var(--color-neutral-fg) !important;
+  opacity: .76;
+  box-shadow: none !important;
+}
+
+.input-group > .btn {
+  min-height: 40px;
+}
+
+html[data-cs-theme="dark"] .form-label {
+  color: var(--color-text-main);
+}
+
+html[data-cs-theme="dark"] .form-control,
+html[data-cs-theme="dark"] .form-select,
+html[data-cs-theme="dark"] .cs-input,
+html[data-cs-theme="dark"] input.cs-input,
+html[data-cs-theme="dark"] textarea.cs-input,
+html[data-cs-theme="dark"] select.cs-input {
+  border-color: var(--border-input) !important;
+  background: var(--bg-input) !important;
+  color: var(--color-text-main) !important;
+  -webkit-text-fill-color: var(--color-text-main) !important;
+}
+
+html[data-cs-theme="dark"] .form-control::placeholder,
+html[data-cs-theme="dark"] .form-select::placeholder,
+html[data-cs-theme="dark"] .cs-input::placeholder,
+html[data-cs-theme="dark"] input::placeholder,
+html[data-cs-theme="dark"] textarea::placeholder {
+  color: var(--color-text-secondary) !important;
+  -webkit-text-fill-color: var(--color-text-secondary) !important;
+}
+
+html[data-cs-theme="dark"] .form-control:focus,
+html[data-cs-theme="dark"] .form-select:focus,
+html[data-cs-theme="dark"] .cs-input:focus,
+html[data-cs-theme="dark"] input.cs-input:focus,
+html[data-cs-theme="dark"] textarea.cs-input:focus,
+html[data-cs-theme="dark"] select.cs-input:focus {
+  border-color: var(--border-input-focus) !important;
+  background: color-mix(in srgb, var(--bg-input) 72%, var(--bg-card)) !important;
+  box-shadow: 0 0 0 .18rem color-mix(in srgb, var(--border-input-focus) 16%, transparent) !important;
+}
+
+html[data-cs-theme="dark"] .btn-primary,
+html[data-cs-theme="dark"] .btn.btn-primary,
+html[data-cs-theme="dark"] .btn-neon,
+html[data-cs-theme="dark"] .btn.finance-primary-btn,
+html[data-cs-theme="dark"] .btn.pipeline-primary-btn,
+html[data-cs-theme="dark"] .btn.asset-primary-btn,
+html[data-cs-theme="dark"] .btn.asset-detail-primary-btn,
+html[data-cs-theme="dark"] .btn.partner-action-primary,
+html[data-cs-theme="dark"] .cs-btn-primary {
+  color: var(--bg-body) !important;
+}
+
+html[data-cs-theme="dark"] .btn-outline-primary,
+html[data-cs-theme="dark"] .btn.btn-outline-primary,
+html[data-cs-theme="dark"] .btn-outline-secondary,
+html[data-cs-theme="dark"] .btn.btn-outline-secondary,
+html[data-cs-theme="dark"] .btn-outline-light,
+html[data-cs-theme="dark"] .btn.btn-outline-light,
+html[data-cs-theme="dark"] .btn-secondary,
+html[data-cs-theme="dark"] .btn.btn-secondary,
+html[data-cs-theme="dark"] .btn.finance-action-btn,
+html[data-cs-theme="dark"] .btn.pipeline-action-btn,
+html[data-cs-theme="dark"] .btn.asset-action-btn,
+html[data-cs-theme="dark"] .btn.asset-detail-action-btn,
+html[data-cs-theme="dark"] .btn.asset-soft-btn,
+html[data-cs-theme="dark"] .btn.cs-filter-btn,
+html[data-cs-theme="dark"] .cs-action-btn,
+html[data-cs-theme="dark"] .audit-action-btn,
+html[data-cs-theme="dark"] .cs-modal-cancel,
+html[data-cs-theme="dark"] .cs-btn-cancel {
+  background: rgba(255,255,255,.04) !important;
+  border-color: rgba(255,255,255,.10) !important;
+  color: var(--color-text-main) !important;
+}
+
+html[data-cs-theme="dark"] .btn-outline-primary:hover,
+html[data-cs-theme="dark"] .btn.btn-outline-primary:hover,
+html[data-cs-theme="dark"] .btn-outline-secondary:hover,
+html[data-cs-theme="dark"] .btn.btn-outline-secondary:hover,
+html[data-cs-theme="dark"] .btn-outline-light:hover,
+html[data-cs-theme="dark"] .btn.btn-outline-light:hover,
+html[data-cs-theme="dark"] .btn-secondary:hover,
+html[data-cs-theme="dark"] .btn.btn-secondary:hover,
+html[data-cs-theme="dark"] .btn.finance-action-btn:hover,
+html[data-cs-theme="dark"] .btn.pipeline-action-btn:hover,
+html[data-cs-theme="dark"] .btn.asset-action-btn:hover,
+html[data-cs-theme="dark"] .btn.asset-detail-action-btn:hover,
+html[data-cs-theme="dark"] .btn.asset-soft-btn:hover,
+html[data-cs-theme="dark"] .btn.cs-filter-btn:hover,
+html[data-cs-theme="dark"] .cs-action-btn:hover,
+html[data-cs-theme="dark"] .audit-action-btn:hover,
+html[data-cs-theme="dark"] .cs-modal-cancel:hover,
+html[data-cs-theme="dark"] .cs-btn-cancel:hover {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  color: var(--color-text-main) !important;
+}
+
+
+/* ===== component rules phase 5 ===== */
+
+/*
+ * UIUX Phase 5 - cards, tables, modals, badges and sidebar alignment.
+ * This file is loaded last so old page-specific shapes settle into one system.
+ */
+
+:root {
+  --uiux-card-radius: 8px;
+  --uiux-modal-radius: 12px;
+  --uiux-card-shadow: 0 2px 10px color-mix(in srgb, var(--color-text-main) 8%, transparent);
+  --uiux-card-shadow-hover: 0 3px 12px color-mix(in srgb, var(--color-text-main) 10%, transparent);
+}
+
+.glass-card,
+.card,
+.list-group-item,
+.dropdown-menu,
+.offcanvas {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--uiux-card-radius) !important;
+  box-shadow: var(--uiux-card-shadow) !important;
+  color: var(--color-text-main) !important;
+}
+
+.glass-card:hover,
+.card:hover,
+.list-group-item:hover,
+.construction-list-card:hover,
+.audit-summary-card.is-clickable:hover {
+  transform: none !important;
+  box-shadow: var(--uiux-card-shadow-hover) !important;
+}
+
+.glass-card .card-header,
+.card > .card-header,
+.card-header {
+  background: var(--bg-card-header) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: var(--uiux-card-radius) var(--uiux-card-radius) 0 0 !important;
+  color: var(--color-text-main) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+.glass-card .glass-card,
+.card .card {
+  background: var(--bg-card-header) !important;
+  box-shadow: none !important;
+}
+
+.table-responsive {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--uiux-card-radius) !important;
+  box-shadow: none !important;
+  overflow-x: auto;
+}
+
+.table-responsive > .table {
+  margin-bottom: 0 !important;
+}
+
+.table {
+  color: var(--color-text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+  border-color: var(--border-color) !important;
+  color: var(--color-text-main) !important;
+}
+
+.table > thead > tr > th,
+.table thead th {
+  background: var(--bg-card-header) !important;
+  color: var(--color-text-secondary) !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  vertical-align: middle !important;
+}
+
+.table > tbody > tr > td,
+.table tbody td {
+  color: var(--color-text-main) !important;
+  vertical-align: middle !important;
+}
+
+.table-hover > tbody > tr:hover > *,
+.table tbody tr:hover > * {
+  background: var(--bg-table-hover) !important;
+  color: var(--color-text-main) !important;
+}
+
+.table .text-muted,
+.table .text-secondary,
+.table small,
+.table .small {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+.modal-content,
+.cs-modal .modal-content,
+.modal-content.cs-modal {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--uiux-modal-radius) !important;
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--color-text-main) 18%, transparent) !important;
+  color: var(--color-text-main) !important;
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer,
+.cs-modal .modal-header,
+.cs-modal .modal-footer,
+.modal-content.cs-modal .modal-header,
+.modal-content.cs-modal .modal-footer {
+  background: var(--bg-card-header) !important;
+  border-color: var(--border-color) !important;
+  color: var(--color-text-main) !important;
+}
+
+.modal-footer,
+.modal-footer.justify-content-between,
+.cs-modal .modal-footer,
+.modal-content.cs-modal .modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: .5rem !important;
+  flex-wrap: wrap !important;
+}
+
+.modal-footer > .d-flex {
+  margin-left: 0 !important;
+}
+
+.modal-title,
+.modal-header .modal-title {
+  color: var(--color-text-main) !important;
+  font-weight: 700 !important;
+}
+
+.badge,
+.status-badge,
+.asset-badge,
+.asset-status-badge,
+.member-badge,
+.role-badge,
+.depth-badge,
+.audit-badge,
+.ga-status-pill,
+.data-count-badge,
+.bm-status,
+.notification-badge,
+.perm-tag,
+.cs-connection-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: .25rem;
+  border-radius: 999px !important;
+  border: 1px solid var(--color-neutral-bd) !important;
+  background: var(--color-neutral-bg) !important;
+  color: var(--color-neutral-fg) !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+}
+
+[hidden],
+.badge[hidden],
+.position-absolute.badge[hidden] {
+  display: none !important;
+}
+
+.cs-notification-count-badge {
+  top: 2px !important;
+  right: 2px !important;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--color-danger-bd) !important;
+  background: var(--color-danger-bg) !important;
+  color: var(--color-danger-fg) !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  box-shadow: none !important;
+  transform: translate(35%, -35%);
+}
+
+.cs-notification-count-badge[hidden] {
+  display: none !important;
+}
+
+.badge.text-bg-primary,
+.badge.bg-primary,
+.ga-status-pill.is-cyan,
+.ga-status-pill.is-indigo,
+.cs-connection-badge.is-info {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--bg-card)) !important;
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--border-color)) !important;
+  color: var(--color-primary) !important;
+}
+
+.badge.text-bg-success,
+.badge.bg-success,
+.status-badge.active,
+.asset-badge.using,
+.asset-status-badge.using,
+.badge-dday.ok,
+.cs-connection-badge.is-success {
+  background: var(--color-success-bg) !important;
+  border-color: var(--color-success-bd) !important;
+  color: var(--color-success-fg) !important;
+}
+
+.badge.text-bg-warning,
+.badge.bg-warning,
+.ga-status-pill.is-warning,
+.badge-dday.warning,
+.cs-connection-badge.is-warning {
+  background: var(--color-warning-bg) !important;
+  border-color: var(--color-warning-bd) !important;
+  color: var(--color-warning-fg) !important;
+}
+
+.badge.text-bg-danger,
+.badge.bg-danger,
+.ga-status-pill.is-danger,
+.ga-status-pill.is-rose,
+.badge-dday.expired,
+.badge-dday.urgent,
+.asset-badge.repair,
+.asset-status-badge.repair,
+.asset-badge.dispose,
+.asset-status-badge.dispose,
+.cs-connection-badge.is-danger {
+  background: var(--color-danger-bg) !important;
+  border-color: var(--color-danger-bd) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.badge.text-bg-secondary,
+.badge.bg-secondary,
+.badge.bg-body-tertiary,
+.badge.text-bg-light,
+.badge.bg-light,
+.status-badge.inactive,
+.asset-badge.storage,
+.asset-status-badge.storage,
+.cs-connection-badge.is-neutral {
+  background: var(--color-neutral-bg) !important;
+  border-color: var(--color-neutral-bd) !important;
+  color: var(--color-neutral-fg) !important;
+}
+
+.cs-page-header .page-title {
+  color: var(--color-primary) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+.cs-sidebar {
+  background: var(--bg-card-header) !important;
+  border-right: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+.cs-sidebar .sidebar-brand,
+.sidebar-profile,
+.sidebar-branch-area {
+  border-color: var(--border-color) !important;
+}
+
+.cs-sidebar .sidebar-brand {
+  color: var(--color-text-main) !important;
+}
+
+.cs-sidebar .sidebar-brand .brand-icon {
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--bg-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--border-color)) !important;
+  box-shadow: none !important;
+  color: var(--color-primary) !important;
+}
+
+.cs-sidebar .sidebar-brand .brand-name {
+  background: none !important;
+  color: var(--color-text-main) !important;
+  -webkit-text-fill-color: var(--color-text-main) !important;
+  text-shadow: none !important;
+}
+
+.cs-sidebar .sidebar-brand .brand-subtitle,
+.cs-sidebar .sidebar-section-label,
+.sidebar-profile-badge,
+.sidebar-branch-area .branch-label {
+  color: var(--color-text-secondary) !important;
+}
+
+.cs-sidebar .sidebar-item,
+.cs-sidebar .sidebar-item.sidebar-folder,
+.sidebar-submenu > .sidebar-item,
+.sidebar-submenu2 > .sidebar-item {
+  border-left: 3px solid transparent !important;
+  color: var(--color-text-secondary) !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+}
+
+.cs-sidebar .sidebar-item:hover,
+.cs-sidebar .sidebar-item.sidebar-folder:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--bg-card)) !important;
+  color: var(--color-text-main) !important;
+}
+
+.cs-sidebar .sidebar-item.active,
+.cs-sidebar .sidebar-item.sidebar-folder.active {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--bg-card)) !important;
+  border-left-color: var(--color-primary) !important;
+  color: var(--color-text-main) !important;
+  font-weight: 700 !important;
+}
+
+.cs-sidebar .sidebar-item .item-icon {
+  color: currentColor !important;
+}
+
+.cs-sidebar .sidebar-item.active .item-icon {
+  color: var(--color-primary) !important;
+}
+
+.sidebar-profile-card,
+.cs-branch-btn-sidebar,
+.cs-branch-dropdown-menu {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Theme shape parity guard.
+ * 라이트/다크는 색상표만 달라야 하므로, 오래된 light 전용 보정 규칙보다
+ * 늦게 같은 모양 값을 양쪽 테마에 함께 적용한다.
+ */
+:root .cs-page-header {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--uiux-card-radius) !important;
+  box-shadow: var(--uiux-card-shadow) !important;
+  color: var(--color-text-main) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root .cs-page-header .page-title {
+  background: none !important;
+  color: var(--color-primary) !important;
+  -webkit-text-fill-color: var(--color-primary) !important;
+  text-shadow: none !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+:root .cs-page-header .page-title::after {
+  display: none !important;
+}
+
+:root .cs-page-header .page-subtitle {
+  color: var(--color-text-secondary) !important;
+}
+
+:root .cs-page-header .ms-auto {
+  align-items: flex-start !important;
+}
+
+:root .cs-sidebar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root .btn:not(.btn-close):not(.btn-link):not(.btn-login),
+:root .btn-sm:not(.btn-close):not(.btn-link),
+:root .btn-neon,
+:root .btn-neon-danger,
+:root .cs-action-btn,
+:root .audit-action-btn {
+  border-radius: var(--uiux-card-radius) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+:root .cs-page-inline-actions {
+  gap: .5rem !important;
+}
+
+:root .cs-page-inline-actions .btn,
+:root .cs-page-inline-actions a.btn {
+  min-height: 34px !important;
+  padding: .38rem .82rem !important;
+  border-radius: var(--uiux-card-radius) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-card-header) !important;
+  color: var(--color-text-main) !important;
+  font-size: .82rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .3rem;
+  box-shadow: none !important;
+}
+
+:root .cs-page-inline-actions .btn:hover,
+:root .cs-page-inline-actions a.btn:hover,
+:root .cs-page-inline-actions .btn:focus-visible,
+:root .cs-page-inline-actions a.btn:focus-visible {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--border-color)) !important;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--bg-card-header)) !important;
+  color: var(--color-primary-hover) !important;
+}
+
+:root .cs-page-inline-actions .btn-primary,
+:root .cs-page-inline-actions .btn.btn-primary,
+:root .cs-page-inline-actions .finance-primary-btn,
+:root .cs-page-inline-actions .pipeline-primary-btn,
+:root .cs-page-inline-actions .asset-primary-btn,
+:root .cs-page-inline-actions .asset-detail-primary-btn {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+
+:root .cs-page-inline-actions .btn-primary:hover,
+:root .cs-page-inline-actions .btn.btn-primary:hover,
+:root .cs-page-inline-actions .finance-primary-btn:hover,
+:root .cs-page-inline-actions .pipeline-primary-btn:hover,
+:root .cs-page-inline-actions .asset-primary-btn:hover,
+:root .cs-page-inline-actions .asset-detail-primary-btn:hover,
+:root .cs-page-inline-actions .btn-primary:focus-visible,
+:root .cs-page-inline-actions .btn.btn-primary:focus-visible {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  color: var(--color-on-primary) !important;
+}
+
+:root .cs-content .glass-card > .card-header {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 52px;
+  padding: .85rem 1.05rem;
+  font-family: var(--cs-font);
+  font-size: .94rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  background: var(--bg-card-header) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--color-text-main) !important;
+}
+
+:root .cs-content .glass-card > .card-header i.bi {
+  font-size: .93rem;
+}
+
+:root .cs-content .glass-card .table > thead > tr > th {
+  font-family: var(--cs-font);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--bg-card-header);
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+:root .cs-content .glass-card .table > tbody > tr > td {
+  font-family: var(--cs-font);
+  font-size: .84rem;
+  font-weight: 400;
+  color: var(--color-text-main);
+  vertical-align: middle;
+}
+
+:root .cs-content .glass-card .btn.btn-sm {
+  min-height: 31px;
+  border-radius: var(--uiux-card-radius);
+  font-size: .78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .28rem;
+}
+
+:root .cs-content .glass-card .btn.btn-sm.btn-outline-primary,
+:root .cs-content .glass-card .btn.btn-sm.btn-outline-secondary,
+:root .cs-content .glass-card .btn.btn-sm.finance-action-btn,
+:root .cs-content .glass-card .btn.btn-sm.pipeline-action-btn,
+:root .cs-content .glass-card .btn.btn-sm.asset-action-btn,
+:root .cs-content .glass-card .btn.btn-sm.asset-detail-action-btn {
+  background: var(--bg-card) !important;
+  color: var(--color-primary) !important;
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--border-color)) !important;
+}
+
+:root .cs-content .glass-card .btn.btn-sm.btn-outline-primary:hover,
+:root .cs-content .glass-card .btn.btn-sm.btn-outline-secondary:hover,
+:root .cs-content .glass-card .btn.btn-sm.finance-action-btn:hover,
+:root .cs-content .glass-card .btn.btn-sm.pipeline-action-btn:hover,
+:root .cs-content .glass-card .btn.btn-sm.asset-action-btn:hover,
+:root .cs-content .glass-card .btn.btn-sm.asset-detail-action-btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--bg-card)) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-hover) !important;
+}
+
+.cs-box-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  flex-wrap: wrap;
+}
+
+.cs-box-section-title {
+  padding-bottom: .34rem;
+  margin-bottom: .54rem;
+  border-bottom: 1px solid var(--border-color, var(--cs-border));
+  color: var(--color-text-main, var(--cs-text-primary));
+  font-family: var(--cs-font);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.cs-box-field-label {
+  color: var(--color-text-main, var(--cs-text-primary));
+  font-weight: 700;
+}
+
+.cs-box-field-value {
+  color: var(--color-text-main, var(--cs-text-primary));
+  font-weight: 400;
+}
+
+.cs-map-info-window {
+  min-width: 180px;
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+.cs-map-info-title {
+  color: var(--color-text-main, var(--cs-text-primary));
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.cs-map-info-subtitle {
+  margin-top: 4px;
+  color: var(--color-text-muted, var(--cs-text-muted));
+  font-size: 12px;
+  line-height: 1.45;
+}

@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from datetime import date
-from types import SimpleNamespace
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 personal_bp = Blueprint("personal", __name__, url_prefix="/personal")
+
+
+@personal_bp.before_request
+def _require_login():
+    if not current_user.is_authenticated:
+        return redirect(url_for("auth.login", next=request.url))
 
 _DEFAULT_EXPENSE_CATEGORIES = [
     "식비",
@@ -63,9 +69,6 @@ def _inject_personal_helpers():
         "can_write": lambda _name=None: True,
         "can_read": lambda _name=None: True,
         "_is_admin": True,
-        "csrf_token": lambda: "",
-        "csp_nonce": "",
-        "current_user": SimpleNamespace(role="admin", name="재훈 님"),
     }
 
 

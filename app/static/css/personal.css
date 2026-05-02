@@ -1,99 +1,50 @@
+/* ── Personal 전용 추가 변수 (companion.css의 변수를 재정의하지 않음) ── */
 :root {
-  --cs-font: "IBM Plex Sans KR", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --cs-display: "Fraunces", "Times New Roman", serif;
-
-  --cs-bg: #f3f7fb;
-  --cs-bg-2: #dce9f6;
-  --cs-surface: #ffffff;
-  --cs-surface-soft: #f8fbff;
-  --cs-border: #d7e1eb;
-
-  --cs-text-primary: #16202a;
-  --cs-text-secondary: #3f5263;
-  --cs-text-muted: #667b8e;
-
-  --cs-brand: #0f766e;
-  --cs-brand-strong: #0b5f58;
-
-  --cs-header-h: 92px;
-
-  /* Banana companion.css 호환 변수 */
-  --cs-primary: var(--cs-brand);
-  --cs-primary-soft: var(--cs-brand-strong);
-  --cs-primary-faint: rgba(15, 118, 110, 0.10);
-  --cs-primary-border: rgba(15, 118, 110, 0.34);
-  --bg-card: var(--cs-surface);
-  --bg-card-header: var(--cs-surface-soft);
-  --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.06);
+  /* companion.css에 없는 Personal 전용 별칭 */
+  --cs-brand:        var(--cs-primary);
+  --cs-brand-strong: var(--cs-primary-soft);
+  --cs-bg-2:         color-mix(in srgb, var(--cs-bg) 90%, var(--cs-primary));
+  --cs-surface-soft: color-mix(in srgb, var(--cs-surface) 80%, transparent);
+  /* 상태 색상 (라이트 기본) */
+  --bg-card:         var(--cs-surface);
+  --bg-card-header:  var(--cs-surface-soft);
+  --shadow-card:     0 2px 8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.06);
   --shadow-card-hover: 0 4px 14px rgba(15, 23, 42, 0.12), 0 2px 5px rgba(15, 23, 42, 0.08);
-  --color-primary: #0f766e;
-  --color-primary-hover: #115e59;
-  --color-success: #166534;
+  --color-primary:       var(--cs-primary);
+  --color-primary-hover: var(--cs-primary-soft);
+  --color-success:    #166534;
   --color-success-fg: #166534;
   --color-success-bg: #dcfce7;
   --color-success-bd: #86efac;
-  --color-danger: #991b1b;
-  --color-danger-fg: #991b1b;
-  --color-danger-bg: #fee2e2;
-  --color-danger-bd: #dfa5a5;
-  --color-warning: #92400e;
+  --color-danger:     #991b1b;
+  --color-danger-fg:  #991b1b;
+  --color-danger-bg:  #fee2e2;
+  --color-danger-bd:  #dfa5a5;
+  --color-warning:    #92400e;
   --color-warning-fg: #92400e;
   --color-warning-bg: #fff7ed;
   --color-warning-bd: #d6a54f;
-  --cs-radius: 14px;
-  --cs-touch-min: 36px;
 }
 
 html[data-cs-theme="dark"] {
-  --cs-bg: #0d151d;
-  --cs-bg-2: #111f2b;
-  --cs-surface: #16212d;
-  --cs-surface-soft: #1a2734;
-  --cs-border: #2d3c4c;
-
-  --cs-text-primary: #e8f1f8;
-  --cs-text-secondary: #c2d0dc;
-  --cs-text-muted: #8fa3b5;
-
-  --cs-brand: #58d2c7;
-  --cs-brand-strong: #3fc3b7;
-
-  /* Banana companion.css 호환 변수 (다크) */
-  --cs-primary: var(--cs-brand);
-  --cs-primary-faint: rgba(88, 210, 199, 0.10);
-  --cs-primary-border: rgba(88, 210, 199, 0.28);
-  --bg-card: #16212d;
-  --bg-card-header: #111f2b;
-  --color-primary: #58d2c7;
-  --color-primary-hover: #3fc3b7;
-  --color-success: #86efac;
+  --color-success:    #86efac;
   --color-success-fg: #86efac;
   --color-success-bg: rgba(34, 197, 94, 0.14);
   --color-success-bd: rgba(134, 239, 172, 0.28);
-  --color-danger: #fca5a5;
-  --color-danger-fg: #fca5a5;
-  --color-danger-bg: rgba(239, 68, 68, 0.14);
-  --color-danger-bd: rgba(248, 113, 113, 0.30);
-  --color-warning: #fcd34d;
+  --color-danger:     #fca5a5;
+  --color-danger-fg:  #fca5a5;
+  --color-danger-bg:  rgba(239, 68, 68, 0.14);
+  --color-danger-bd:  rgba(248, 113, 113, 0.30);
+  --color-warning:    #fcd34d;
   --color-warning-fg: #fcd34d;
   --color-warning-bg: rgba(245, 158, 11, 0.14);
   --color-warning-bd: rgba(251, 191, 36, 0.28);
+  --bg-card:         var(--cs-surface);
+  --shadow-card:     0 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: var(--cs-font);
-  color: var(--cs-text-primary);
-  background:
-    radial-gradient(circle at 12% 8%, rgba(21, 135, 120, 0.16), transparent 34%),
-    radial-gradient(circle at 84% 0%, rgba(49, 117, 176, 0.16), transparent 40%),
-    linear-gradient(140deg, var(--cs-bg), var(--cs-bg-2));
-  min-height: 100vh;
-}
+/* companion.css가 body/html 스타일을 처리하므로 여기서는 재정의하지 않음 */
 
 .site-topbar {
   padding-top: 1rem;

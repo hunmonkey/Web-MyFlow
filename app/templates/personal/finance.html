@@ -31,10 +31,9 @@
 {% block extra_css %}
 <style nonce="{{ csp_nonce }}">
 .personal-finance-page {
-  --finance-page-height: calc(100dvh - var(--cs-header-h) - 1.6rem);
   min-height: 0;
-  height: var(--finance-page-height);
-  max-height: var(--finance-page-height);
+  height: calc(100dvh - var(--cs-header-h) - 1.6rem);
+  max-height: calc(100dvh - var(--cs-header-h) - 1.6rem);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -629,30 +628,6 @@ html[data-cs-theme="light"] .tx-row:hover {
 <script nonce="{{ csp_nonce }}">
 let expenseDonutChart = null;
 let incomeDonutChart = null;
-let financeViewportSyncFrame = 0;
-
-const syncFinanceViewportHeight = () => {
-  const financePage = document.querySelector('.personal-finance-page');
-  const shell = document.getElementById('csPageShell');
-  const fitWrap = document.getElementById('csViewportFit');
-  if (!financePage || !shell || !fitWrap) return;
-
-  const scaleText = getComputedStyle(shell).getPropertyValue('--cs-page-fit-scale');
-  const scale = Math.max(0.35, parseFloat(scaleText) || 1);
-  const pageTop = financePage.offsetTop || 0;
-  const availableHeight = fitWrap.clientHeight / scale - pageTop - 4;
-  if (availableHeight > 240) {
-    financePage.style.setProperty('--finance-page-height', `${availableHeight}px`);
-  }
-};
-
-const scheduleFinanceViewportHeight = () => {
-  if (financeViewportSyncFrame) cancelAnimationFrame(financeViewportSyncFrame);
-  financeViewportSyncFrame = requestAnimationFrame(() => {
-    financeViewportSyncFrame = 0;
-    syncFinanceViewportHeight();
-  });
-};
 
 (() => {
   const isLightTheme = () => {
@@ -670,21 +645,6 @@ const scheduleFinanceViewportHeight = () => {
 
   let trendChart = null;
   let latestFinanceData = null;
-
-  scheduleFinanceViewportHeight();
-  window.addEventListener('load', scheduleFinanceViewportHeight);
-  window.addEventListener('resize', scheduleFinanceViewportHeight);
-  document.addEventListener('cs:theme-changed', scheduleFinanceViewportHeight);
-  window.setTimeout(scheduleFinanceViewportHeight, 120);
-  window.setTimeout(scheduleFinanceViewportHeight, 360);
-
-  if (window.ResizeObserver) {
-    const fitObserver = new ResizeObserver(scheduleFinanceViewportHeight);
-    const shell = document.getElementById('csPageShell');
-    const fitWrap = document.getElementById('csViewportFit');
-    if (shell) fitObserver.observe(shell);
-    if (fitWrap) fitObserver.observe(fitWrap);
-  }
 
   const toNumber = (value) => Number(value || 0);
   const toMoney = (value) => `${Math.round(toNumber(value)).toLocaleString('ko-KR')}원`;
@@ -845,13 +805,11 @@ const scheduleFinanceViewportHeight = () => {
       renderExpenseTop(data?.category_monthly?.expense_items || []);
       renderSubscriptions(data?.subscription?.upcoming_items || []);
       renderLoans(data?.loan?.upcoming_items || []);
-      scheduleFinanceViewportHeight();
     } catch (error) {
       setNotice(error?.message || '개인 통계를 불러오지 못했습니다.', true);
       renderExpenseTop([]);
       renderSubscriptions([]);
       renderLoans([]);
-      scheduleFinanceViewportHeight();
     }
   };
 
@@ -873,7 +831,6 @@ const scheduleFinanceViewportHeight = () => {
         fetchMyFlowStats(monthsSelect.value || 6);
       }
       applyTxToggleStyle();
-      scheduleFinanceViewportHeight();
     }, 120);
   };
   document.addEventListener('cs:theme-changed', refreshFinanceOnThemeChange);
@@ -886,7 +843,6 @@ const scheduleFinanceViewportHeight = () => {
       renderDonut('#income-donut', latestFinanceData?.income_by_category || incData, '수입');
     }
     applyTxToggleStyle();
-    scheduleFinanceViewportHeight();
   };
 })();
 
@@ -1022,11 +978,9 @@ function renderDonut(selector, dataObj, title) {
     incomeDonutChart = chart;
   }
   chart.render();
-  scheduleFinanceViewportHeight();
 }
 
 if (Object.keys(expData).length) renderDonut('#expense-donut', expData, '지출');
 if (Object.keys(incData).length) renderDonut('#income-donut',  incData, '수입');
-scheduleFinanceViewportHeight();
 </script>
 {% endblock %}

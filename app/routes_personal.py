@@ -67,22 +67,10 @@ _DEFAULT_BILLING_CYCLES = [
 ]
 _DEFAULT_SUBSCRIPTION_CATEGORIES = ["OTT", "음악", "클라우드", "업무", "기타"]
 _PALETTE_PRESET_COLORS = [
-    "#1d4ed8",
-    "#2563eb",
-    "#0ea5e9",
-    "#06b6d4",
-    "#14b8a6",
-    "#10b981",
-    "#22c55e",
-    "#84cc16",
-    "#eab308",
-    "#f97316",
-    "#ef4444",
-    "#8b5cf6",
-    "#a855f7",
-    "#db2777",
-    "#f43f5e",
-    "#0f172a",
+    "#0F766E",
+    "#991B1B",
+    "#92400E",
+    "#166534",
 ]
 _PALETTE_PAGE_SIZE = 50
 _KOREAN_WEEKDAYS = ("월", "화", "수", "목", "금", "토", "일")
@@ -1151,6 +1139,32 @@ def palette_save():
     db.session.add(row)
     db.session.commit()
     flash("팔레트 조합을 저장했습니다.", "success")
+    return redirect(url_for("personal.palette"))
+
+
+@personal_bp.route("/palette/edit/<int:pid>", methods=["POST"])
+def palette_edit(pid: int):
+    _ensure_palette_columns()
+    user_id = int(current_user.id)
+    row = PersonalPaletteSet.query.filter_by(id=pid, user_id=user_id).first()
+    if row is None:
+        flash("수정할 색상 조합을 찾지 못했습니다.", "warning")
+        return redirect(url_for("personal.palette"))
+
+    title = (request.form.get("palette_title") or "").strip() or "색상 조합"
+    description = (request.form.get("palette_description") or "").strip()[:300]
+    row.title = title[:120]
+    row.description = description or None
+    row.box1_hex = _normalize_hex(request.form.get("box1_hex"))
+    row.box1_rgb = _normalize_rgb(request.form.get("box1_rgb"))
+    row.box2_hex = _normalize_hex(request.form.get("box2_hex"))
+    row.box2_rgb = _normalize_rgb(request.form.get("box2_rgb"))
+    row.box3_hex = _normalize_hex(request.form.get("box3_hex"))
+    row.box3_rgb = _normalize_rgb(request.form.get("box3_rgb"))
+    row.box4_hex = _normalize_hex(request.form.get("box4_hex"))
+    row.box4_rgb = _normalize_rgb(request.form.get("box4_rgb"))
+    db.session.commit()
+    flash("색상 조합을 수정했습니다.", "success")
     return redirect(url_for("personal.palette"))
 
 

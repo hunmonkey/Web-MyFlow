@@ -152,6 +152,10 @@
        class="sidebar-item {% if request.endpoint and request.endpoint.startswith('personal.gallery') %}active{% endif %}">
       <i class="bi bi-images item-icon"></i><span>갤러리</span>
     </a>
+    <a href="{{ url_for('personal.palette') }}"
+       class="sidebar-item {% if request.endpoint == 'personal.palette' %}active{% endif %}">
+      <i class="bi bi-palette item-icon"></i><span>팔레트</span>
+    </a>
 
     <div class="sidebar-section mt-auto"><span class="sidebar-section-label">시스템</span></div>
 

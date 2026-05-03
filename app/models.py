@@ -192,3 +192,27 @@ class PersonalSchedule(db.Model):
     )
 
     user = db.relationship("User", lazy="joined")
+
+
+class PersonalPaletteSet(db.Model):
+    __tablename__ = "personal_palette_sets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title = db.Column(db.String(120), nullable=False, default="색상 조합")
+    box1_hex = db.Column(db.String(7), nullable=True, default="")
+    box1_rgb = db.Column(db.String(20), nullable=True, default="")
+    box2_hex = db.Column(db.String(7), nullable=True, default="")
+    box2_rgb = db.Column(db.String(20), nullable=True, default="")
+    box3_hex = db.Column(db.String(7), nullable=True, default="")
+    box3_rgb = db.Column(db.String(20), nullable=True, default="")
+    box4_hex = db.Column(db.String(7), nullable=True, default="")
+    box4_rgb = db.Column(db.String(20), nullable=True, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User", lazy="joined")

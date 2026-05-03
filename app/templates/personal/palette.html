@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+{% block title %}팔레트{% endblock %}
+{% block page_title %}팔레트{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.palette-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.palette-top-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
+}
+
+.palette-left,
+.palette-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.palette-card {
+  background: rgba(15, 23, 42, 0.68);
+  border: 1px solid var(--cs-border);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.palette-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.palette-picker input[type="color"] {
+  width: 64px;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0;
+}
+
+.palette-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: #0d6efd;
+}
+
+.palette-preset-wrap {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(26px, 1fr));
+  gap: 8px;
+}
+
+.palette-preset-btn {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+}
+
+.palette-preset-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.palette-target {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.palette-arrow {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border-radius: 12px;
+  width: 100%;
+  height: 46px;
+  border: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.palette-right-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.palette-slot {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: 0.75rem;
+  min-height: 140px;
+  background: rgba(15,23,42,0.4);
+}
+
+.palette-slot-title {
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.palette-slot .color-chip {
+  border-radius: 10px;
+  width: 100%;
+  height: 72px;
+  border: 1px solid rgba(255,255,255,.2);
+}
+
+.palette-slot-value {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+  display: grid;
+  gap: 2px;
+}
+
+.palette-slot-empty {
+  color: var(--cs-text-muted);
+}
+
+.palette-save-wrap {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.palette-save-title {
+  max-width: 220px;
+}
+
+.palette-list-wrap {
+  border: 1px solid var(--cs-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.palette-list th,
+.palette-list td {
+  vertical-align: middle;
+}
+
+@media (max-width: 1199px) {
+  .palette-right-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .palette-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-right-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-preset-wrap {
+    grid-template-columns: repeat(10, minmax(24px, 1fr));
+  }
+
+  .palette-save-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="palette-shell">
+  <section class="palette-top-grid">
+    <div class="palette-left">
+      <div class="palette-card">
+        <h5 class="mb-3">색상 팔레트</h5>
+        <div class="palette-picker mb-3">
+          <input type="color" id="sourceColor" value="#2563eb" aria-label="색상 선택">
+          <div id="sourcePreview" class="palette-preview" style="background:#2563eb"></div>
+          <div>
+            <div>선택한 헥스</div>
+            <div id="sourceHex" class="text-info fw-bold">#2563eb</div>
+            <div id="sourceRgb" class="text-secondary small">RGB: 37, 99, 235</div>
+          </div>
+        </div>
+        <div class="palette-preset-wrap mb-3">
+          {% for color in preset_colors %}
+          <button type="button" class="palette-preset-btn" data-color="{{ color }}"
+                  style="background:{{ color }}" aria-label="{{ color }}"></button>
+          {% endfor %}
+        </div>
+        <div class="mb-2">
+          <div class="small text-secondary mb-2">옮길 박스 선택</div>
+          <div class="palette-target">
+            <button type="button" class="btn btn-outline-secondary btn-sm palette-target-btn active" data-target="0">박스1</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm palette-target-btn" data-target="1">박스2</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm palette-target-btn" data-target="2">박스3</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm palette-target-btn" data-target="3">박스4</button>
+          </div>
+        </div>
+        <button id="moveToBox" class="palette-arrow" type="button">
+          <i class="bi bi-arrow-right-short me-1"></i>선택 색상을 박스로 이동
+        </button>
+      </div>
+    </div>
+
+    <div class="palette-right">
+      <div class="palette-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">4개 색상박스</h5>
+          <span class="small text-secondary">HEX / RGB 표시</span>
+        </div>
+        <div class="palette-right-grid" id="paletteSlots">
+          {% for idx in [1,2,3,4] %}
+          <div class="palette-slot" data-slot="{{ idx - 1 }}">
+            <div class="palette-slot-title fw-semibold">박스 {{ idx }}</div>
+            <div class="color-chip palette-slot-chip" style="background:#18181f;"></div>
+            <div class="palette-slot-value" aria-live="polite">
+              <span class="palette-slot-hex palette-slot-empty">HEX -</span>
+              <span class="palette-slot-rgb palette-slot-empty">RGB -</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <form method="POST" action="{{ url_for('personal.palette_save') }}" id="paletteSaveForm" class="palette-save-wrap mt-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="box1Hex" name="box1_hex" value="">
+          <input type="hidden" id="box1Rgb" name="box1_rgb" value="">
+          <input type="hidden" id="box2Hex" name="box2_hex" value="">
+          <input type="hidden" id="box2Rgb" name="box2_rgb" value="">
+          <input type="hidden" id="box3Hex" name="box3_hex" value="">
+          <input type="hidden" id="box3Rgb" name="box3_rgb" value="">
+          <input type="hidden" id="box4Hex" name="box4_hex" value="">
+          <input type="hidden" id="box4Rgb" name="box4_rgb" value="">
+          <input type="text" id="paletteTitle" name="palette_title" class="form-control cs-input palette-save-title"
+                 placeholder="색상제목 입력">
+          <button id="savePalette" class="btn btn-primary" type="submit">
+            <i class="bi bi-save2 me-1"></i>색상박스 저장
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="palette-card palette-list-wrap">
+    <div class="d-flex justify-content-between align-items-center p-3">
+      <h5 class="mb-0">저장된 색상 목록</h5>
+      <span class="small text-secondary" id="paletteCount">
+        총 {{ palette_total }}개 ({{ palette_page }}/{{ palette_pages or 1 }} 페이지)
+      </span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover palette-list mb-0">
+        <thead>
+          <tr>
+            <th>색상제목</th>
+            <th>박스1 HEX</th>
+            <th>박스1 RGB</th>
+            <th>박스2 HEX</th>
+            <th>박스2 RGB</th>
+            <th>박스3 HEX</th>
+            <th>박스3 RGB</th>
+            <th>박스4 HEX</th>
+            <th>박스4 RGB</th>
+            <th>색상박스로 올리기</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="paletteRows">
+          {% if palette_items %}
+          {% for item in palette_items %}
+          <tr data-box1-hex="{{ item.boxes[0].hex or '' }}"
+              data-box1-rgb="{{ item.boxes[0].rgb or '' }}"
+              data-box2-hex="{{ item.boxes[1].hex or '' }}"
+              data-box2-rgb="{{ item.boxes[1].rgb or '' }}"
+              data-box3-hex="{{ item.boxes[2].hex or '' }}"
+              data-box3-rgb="{{ item.boxes[2].rgb or '' }}"
+              data-box4-hex="{{ item.boxes[3].hex or '' }}"
+              data-box4-rgb="{{ item.boxes[3].rgb or '' }}">
+            <td class="text-nowrap">{{ item.title }}</td>
+            {% for box in item.boxes %}
+            <td>{{ box.hex or '-' }}</td>
+            <td>{{ 'RGB ' ~ box.rgb if box.rgb else '-' }}</td>
+            {% endfor %}
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-light btn-load">색상박스로 올리기</button>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('personal.palette_delete', pid=item.id) }}"
+                    onsubmit="return confirm('이 항목을 삭제하시겠습니까?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="11" class="text-center text-secondary py-4">저장된 색상 조합이 없습니다.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {% if palette_pages > 1 %}
+    <div class="d-flex justify-content-end p-3">
+      <nav aria-label="팔레트 목록 페이지">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {{ 'disabled' if not palette_has_prev else '' }}">
+            <a class="page-link"
+               href="{{ url_for('personal.palette', page=palette_prev_num if palette_has_prev else 1) }}">
+              이전
+            </a>
+          </li>
+          <li class="page-item {{ 'disabled' if not palette_has_next else '' }}">
+            <a class="page-link"
+               href="{{ url_for('personal.palette', page=palette_next_num if palette_has_next else palette_pages) }}">
+              다음
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const sourceColor = document.getElementById('sourceColor');
+  const sourceHex = document.getElementById('sourceHex');
+  const sourceRgb = document.getElementById('sourceRgb');
+  const sourcePreview = document.getElementById('sourcePreview');
+  const presetButtons = Array.from(document.querySelectorAll('.palette-preset-btn'));
+  const targetButtons = Array.from(document.querySelectorAll('.palette-target-btn'));
+  const moveBtn = document.getElementById('moveToBox');
+  const saveBtn = document.getElementById('savePalette');
+  const paletteSaveForm = document.getElementById('paletteSaveForm');
+  const titleInput = document.getElementById('paletteTitle');
+  const rowsBody = document.getElementById('paletteRows');
+  const slotEls = Array.from(document.querySelectorAll('.palette-slot'));
+  const hiddenFields = {
+    box1Hex: document.getElementById('box1Hex'),
+    box1Rgb: document.getElementById('box1Rgb'),
+    box2Hex: document.getElementById('box2Hex'),
+    box2Rgb: document.getElementById('box2Rgb'),
+    box3Hex: document.getElementById('box3Hex'),
+    box3Rgb: document.getElementById('box3Rgb'),
+    box4Hex: document.getElementById('box4Hex'),
+    box4Rgb: document.getElementById('box4Rgb'),
+  };
+
+  let activeTarget = 0;
+  let slots = [
+    { hex: '', rgb: '' },
+    { hex: '', rgb: '' },
+    { hex: '', rgb: '' },
+    { hex: '', rgb: '' },
+  ];
+
+  const EMPTY_HEX = 'HEX -';
+  const EMPTY_RGB = 'RGB -';
+
+  function toRgbFromHex(hex) {
+    const raw = (hex || '').replace('#', '').trim();
+    if (!/^[0-9a-fA-F]{6}$/.test(raw)) return '';
+    const r = parseInt(raw.slice(0, 2), 16);
+    const g = parseInt(raw.slice(2, 4), 16);
+    const b = parseInt(raw.slice(4, 6), 16);
+    return `RGB ${r}, ${g}, ${b}`;
+  }
+
+  function renderSource() {
+    const hex = sourceColor.value.toUpperCase();
+    sourceHex.textContent = hex;
+    sourceRgb.textContent = toRgbFromHex(hex);
+    sourcePreview.style.background = hex;
+  }
+
+  function renderSlots() {
+    slotEls.forEach((slotEl) => {
+      const idx = Number(slotEl.dataset.slot || 0);
+      const data = slots[idx] || {};
+      const chip = slotEl.querySelector('.palette-slot-chip');
+      const hexEl = slotEl.querySelector('.palette-slot-hex');
+      const rgbEl = slotEl.querySelector('.palette-slot-rgb');
+      if (data.hex) {
+        chip.style.background = data.hex;
+        hexEl.textContent = data.hex;
+        rgbEl.textContent = `RGB ${data.rgb}`;
+        hexEl.classList.remove('palette-slot-empty');
+        rgbEl.classList.remove('palette-slot-empty');
+      } else {
+        chip.style.background = '#18181f';
+        hexEl.textContent = EMPTY_HEX;
+        rgbEl.textContent = EMPTY_RGB;
+        hexEl.classList.add('palette-slot-empty');
+        rgbEl.classList.add('palette-slot-empty');
+      }
+    });
+  }
+
+  function renderHiddenFields() {
+    hiddenFields.box1Hex.value = slots[0].hex || '';
+    hiddenFields.box1Rgb.value = slots[0].rgb || '';
+    hiddenFields.box2Hex.value = slots[1].hex || '';
+    hiddenFields.box2Rgb.value = slots[1].rgb || '';
+    hiddenFields.box3Hex.value = slots[2].hex || '';
+    hiddenFields.box3Rgb.value = slots[2].rgb || '';
+    hiddenFields.box4Hex.value = slots[3].hex || '';
+    hiddenFields.box4Rgb.value = slots[3].rgb || '';
+  }
+
+  function setActiveTarget(targetIdx) {
+    activeTarget = targetIdx;
+    targetButtons.forEach((btn) => {
+      const isActive = Number(btn.dataset.target) === targetIdx;
+      btn.classList.toggle('active', isActive);
+      btn.classList.toggle('btn-primary', isActive);
+      btn.classList.toggle('btn-outline-secondary', !isActive);
+    });
+  }
+
+  function loadFromRow(row) {
+    slots = [0, 1, 2, 3].map((idx) => ({
+      hex: (row.dataset[`box${idx + 1}Hex`] || '').trim(),
+      rgb: (row.dataset[`box${idx + 1}Rgb`] || '').trim(),
+    }));
+    renderSlots();
+    renderHiddenFields();
+  }
+
+  sourceColor.addEventListener('input', renderSource);
+
+  presetButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const color = btn.dataset.color || '#2563eb';
+      sourceColor.value = color;
+      renderSource();
+    });
+  });
+
+  targetButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setActiveTarget(Number(btn.dataset.target || 0));
+    });
+  });
+
+  moveBtn.addEventListener('click', () => {
+    const hex = sourceColor.value.toUpperCase();
+    const rgbText = toRgbFromHex(hex);
+    const rgb = rgbText.replace(/^RGB\s*/, '');
+    slots[activeTarget] = { hex, rgb };
+    renderSlots();
+    renderHiddenFields();
+  });
+
+  saveBtn.addEventListener('click', (event) => {
+    const hasColor = slots.some((slot) => Boolean(slot.hex));
+    if (!hasColor) {
+      event.preventDefault();
+      window.alert('박스 중 하나 이상에 색상을 넣어 저장해 주세요.');
+      return;
+    }
+    if (!titleInput.value.trim()) {
+      titleInput.value = '색상 조합';
+    }
+    renderHiddenFields();
+  });
+
+  rowsBody.addEventListener('click', (event) => {
+    const loadButton = event.target.closest('.btn-load');
+    if (!loadButton) return;
+    const row = event.target.closest('tr');
+    if (row) {
+      loadFromRow(row);
+    }
+  });
+
+  setActiveTarget(0);
+  renderSource();
+  renderSlots();
+  renderHiddenFields();
+})();
+</script>
+{% endblock %}

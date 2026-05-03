@@ -19,6 +19,7 @@ from app.extensions import csrf, db
 from app.models import (
     FinanceTransaction,
     HealthLog,
+    PersonalPaletteSet,
     PersonalSchedule,
     PersonalSubscription,
     Profile,
@@ -64,8 +65,74 @@ _DEFAULT_BILLING_CYCLES = [
     ("quarterly", "분기"),
 ]
 _DEFAULT_SUBSCRIPTION_CATEGORIES = ["OTT", "음악", "클라우드", "업무", "기타"]
+_PALETTE_PRESET_COLORS = [
+    "#1d4ed8",
+    "#2563eb",
+    "#0ea5e9",
+    "#06b6d4",
+    "#14b8a6",
+    "#10b981",
+    "#22c55e",
+    "#84cc16",
+    "#eab308",
+    "#f97316",
+    "#ef4444",
+    "#8b5cf6",
+    "#a855f7",
+    "#db2777",
+    "#f43f5e",
+    "#0f172a",
+]
+_PALETTE_PAGE_SIZE = 50
 _KOREAN_WEEKDAYS = ("월", "화", "수", "목", "금", "토", "일")
 _DISPLAY_WEEKDAY_ORDER = (6, 0, 1, 2, 3, 4, 5)
+
+
+def _normalize_hex(raw_value: str | None) -> str:
+    text = str(raw_value or "").strip().lstrip("#").upper()
+    if len(text) != 6:
+        return ""
+    if any(ch not in "0123456789ABCDEF" for ch in text):
+        return ""
+    return f"#{text}"
+
+
+def _normalize_rgb(raw_value: str | None) -> str:
+    text = (str(raw_value or "").strip().replace("rgb", "", 1).replace("RGB", "", 1)
+            .replace(" ", "").replace("(", "").replace(")", ""))
+    if not text:
+        return ""
+    parts = text.split(",") if "," in text else text.split(" ")
+    if len(parts) != 3:
+        return ""
+    values = []
+    for part in parts:
+        try:
+            value = int(part)
+        except ValueError:
+            return ""
+        if value < 0 or value > 255:
+            return ""
+        values.append(str(value))
+    return ", ".join(values)
+
+
+def _serialize_palette_rows(items: list[PersonalPaletteSet]) -> list[dict[str, object]]:
+    rows = []
+    for item in items:
+        rows.append(
+            {
+                "id": item.id,
+                "title": item.title or "색상 조합",
+                "boxes": [
+                    {"hex": item.box1_hex or "", "rgb": item.box1_rgb or ""},
+                    {"hex": item.box2_hex or "", "rgb": item.box2_rgb or ""},
+                    {"hex": item.box3_hex or "", "rgb": item.box3_rgb or ""},
+                    {"hex": item.box4_hex or "", "rgb": item.box4_rgb or ""},
+                ],
+            }
+        )
+    return rows
 
 
 def _to_int(raw_value: str | None, default: int, min_value: int, max_value: int) -> int:
@@ -927,6 +994,64 @@ def gallery_upload():
 def gallery_delete(gid: int):
     _ = gid
     return _coming_soon()
+
+
+@personal_bp.route("/palette")
+def palette():
+    user_id = int(current_user.id)
+    page = _to_int(request.args.get("page"), default=1, min_value=1, max_value=999999)
+    query = (
+        PersonalPaletteSet.query.filter_by(user_id=user_id)
+        .order_by(PersonalPaletteSet.created_at.desc())
+    )
+    pagination = query.paginate(page=page, per_page=_PALETTE_PAGE_SIZE, error_out=False)
+    return render_template(
+        "personal/palette.html",
+        preset_colors=_PALETTE_PRESET_COLORS,
+        palette_items=_serialize_palette_rows(pagination.items),
+        palette_total=pagination.total,
+        palette_page=page,
+        palette_pages=pagination.pages,
+        palette_has_prev=bool(pagination.has_prev),
+        palette_has_next=bool(pagination.has_next),
+        palette_prev_num=pagination.prev_num,
+        palette_next_num=pagination.next_num,
+    )
+
+
+@personal_bp.route("/palette/save", methods=["POST"])
+def palette_save():
+    user_id = int(current_user.id)
+    title = (request.form.get("palette_title") or "").strip() or "색상 조합"
+
+    row = PersonalPaletteSet(
+        user_id=user_id,
+        title=title[:120],
+        box1_hex=_normalize_hex(request.form.get("box1_hex")),
+        box1_rgb=_normalize_rgb(request.form.get("box1_rgb")),
+        box2_hex=_normalize_hex(request.form.get("box2_hex")),
+        box2_rgb=_normalize_rgb(request.form.get("box2_rgb")),
+        box3_hex=_normalize_hex(request.form.get("box3_hex")),
+        box3_rgb=_normalize_rgb(request.form.get("box3_rgb")),
+        box4_hex=_normalize_hex(request.form.get("box4_hex")),
+        box4_rgb=_normalize_rgb(request.form.get("box4_rgb")),
+    )
+    db.session.add(row)
+    db.session.commit()
+    flash("팔레트 조합을 저장했습니다.", "success")
+    return redirect(url_for("personal.palette"))
+
+
+@personal_bp.route("/palette/delete/<int:pid>", methods=["POST"])
+def palette_delete(pid: int):
+    row = PersonalPaletteSet.query.filter_by(id=pid, user_id=int(current_user.id)).first()
+    if row is None:
+        flash("삭제할 색상 조합을 찾지 못했습니다.", "warning")
+    else:
+        db.session.delete(row)
+        db.session.commit()
+        flash("색상 조합을 삭제했습니다.", "success")
+    return redirect(url_for("personal.palette"))
 
 
 @personal_bp.route("/finance/loans")

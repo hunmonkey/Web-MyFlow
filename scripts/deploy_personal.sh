@@ -22,18 +22,18 @@ echo "[2/3] 컨테이너 상태 확인"
 docker compose ps
 
 echo "[3/3] 웹 컨테이너 health 상태 확인"
-health="$(docker inspect --format '{{.State.Health.Status}}' Web-MyFlow 2>/dev/null || true)"
+health="$(docker inspect --format '{{.State.Health.Status}}' Web-Personal-Myflow-system 2>/dev/null || true)"
 if [[ "$health" == "healthy" ]]; then
-  echo "[완료] Web-MyFlow health=healthy"
+  echo "[완료] Web-Personal-Myflow-system health=healthy"
 else
   echo "[안내] 아직 healthy가 아닐 수 있습니다. 10~30초 뒤 아래 명령으로 다시 확인해 주세요."
-  echo "docker inspect --format '{{.State.Health.Status}}' Web-MyFlow"
+  echo "docker inspect --format '{{.State.Health.Status}}' Web-Personal-Myflow-system"
 fi
 
-scheduler_status="$(docker inspect --format '{{.State.Status}}' BackupScheduler-MyFlow 2>/dev/null || true)"
+scheduler_status="$(docker inspect --format '{{.State.Status}}' Web-Personal-Myflow-Backup 2>/dev/null || true)"
 if [[ "$scheduler_status" == "running" ]]; then
-  echo "[완료] BackupScheduler-MyFlow status=running"
+  echo "[완료] Web-Personal-Myflow-Backup status=running"
 else
-  echo "[안내] BackupScheduler-MyFlow 상태를 확인해 주세요."
-  echo "docker inspect --format '{{.State.Status}}' BackupScheduler-MyFlow"
+  echo "[안내] Web-Personal-Myflow-Backup 상태를 확인해 주세요."
+  echo "docker inspect --format '{{.State.Status}}' Web-Personal-Myflow-Backup"
 fi

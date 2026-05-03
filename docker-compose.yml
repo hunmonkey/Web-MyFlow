@@ -3,7 +3,7 @@ name: myflow
 services:
   personal-web:
     build: .
-    container_name: Web-MyFlow
+    container_name: Web-Personal-Myflow-system
     restart: unless-stopped
     ports:
       - "985:985"
@@ -39,7 +39,7 @@ services:
 
   backup-scheduler:
     build: .
-    container_name: BackupScheduler-MyFlow
+    container_name: Web-Personal-Myflow-Backup
     restart: unless-stopped
     env_file:
       - .env
@@ -63,7 +63,7 @@ services:
 
   db:
     image: postgres:15-alpine
-    container_name: DB-MyFlow
+    container_name: Web-Personal-Myflow-postgres
     restart: unless-stopped
     env_file:
       - .env

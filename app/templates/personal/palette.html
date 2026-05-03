@@ -2,28 +2,457 @@
 {% block title %}팔레트{% endblock %}
 {% block page_title %}팔레트{% endblock %}
 
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.palette-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.palette-v2 .palette-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 0.9rem;
+}
+
+.palette-v2 .palette-card {
+  border: 1px solid var(--cs-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cs-surface) 96%, transparent);
+  overflow: hidden;
+}
+
+.palette-v2 .palette-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--cs-border);
+  background: color-mix(in srgb, var(--cs-surface-soft) 88%, transparent);
+}
+
+.palette-v2 .palette-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cs-text-primary);
+}
+
+.palette-v2 .palette-card-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-source-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.palette-v2 .palette-sample-wrap {
+  position: relative;
+  min-height: 220px;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--cs-surface-soft) 85%, transparent), transparent),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.24), transparent 56%);
+}
+
+.palette-v2 .palette-sample {
+  --palette-sample-color: #0F766E;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--palette-sample-color);
+  cursor: pointer;
+}
+
+.palette-v2 .palette-sample:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--cs-primary) 36%, transparent);
+  outline-offset: -2px;
+}
+
+.palette-v2 .palette-color-picker {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.palette-v2 .palette-live-readout {
+  position: absolute;
+  right: 0.55rem;
+  bottom: 0.55rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.42rem 0.52rem;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cs-surface) 88%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.palette-v2 .palette-live-readout strong {
+  font-size: 0.76rem;
+  line-height: 1.15;
+  color: var(--cs-text-primary);
+}
+
+.palette-v2 .palette-live-readout span {
+  font-size: 0.74rem;
+  line-height: 1.1;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-source-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.palette-v2 .palette-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.palette-v2 .palette-preset-btn {
+  --palette-preset-color: #0F766E;
+  height: 34px;
+  border: 1px solid var(--cs-border);
+  border-radius: 7px;
+  background: var(--palette-preset-color);
+}
+
+.palette-v2 .palette-preset-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--cs-primary) 36%, transparent);
+  outline-offset: 1px;
+}
+
+.palette-v2 .palette-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+}
+
+.palette-v2 .palette-input-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 0.42rem;
+  align-items: center;
+  margin: 0;
+}
+
+.palette-v2 .palette-input-rgb-row {
+  grid-template-columns: 48px repeat(3, minmax(0, 1fr));
+}
+
+.palette-v2 .palette-input-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-input-hex,
+.palette-v2 .palette-input-rgb {
+  min-height: 34px;
+  font-size: 0.9rem;
+}
+
+.palette-v2 .palette-input-rgb::-webkit-outer-spin-button,
+.palette-v2 .palette-input-rgb::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.palette-v2 .palette-source-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.68rem 0.85rem 0.8rem;
+  border-top: 1px solid var(--cs-border);
+}
+
+.palette-v2 .palette-send-group {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+  flex: 1 1 460px;
+}
+
+.palette-v2 .palette-send-btn {
+  min-height: 34px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.palette-v2 .palette-reset-btn {
+  min-height: 34px;
+  min-width: 88px;
+  font-size: 0.82rem;
+}
+
+.palette-v2 .palette-boxes-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem 0.85rem;
+}
+
+.palette-v2 .palette-boxes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.52rem;
+}
+
+.palette-v2 .palette-box {
+  display: grid;
+  grid-template-rows: auto minmax(72px, 1fr);
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cs-surface-soft) 88%, transparent);
+}
+
+.palette-v2 .palette-box-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.2rem 0.5rem;
+  align-items: center;
+  padding: 0.48rem 0.56rem 0.5rem;
+}
+
+.palette-v2 .palette-box-index {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--cs-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-box-hex {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--cs-text-primary);
+}
+
+.palette-v2 .palette-box-rgb {
+  display: block;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-box-empty {
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-box-color {
+  --palette-box-color: color-mix(in srgb, var(--cs-surface) 80%, var(--cs-surface-soft) 20%);
+  border-top: 1px solid var(--cs-border);
+  background: var(--palette-box-color);
+}
+
+.palette-v2 .palette-meta-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45rem;
+}
+
+.palette-v2 .palette-meta-title,
+.palette-v2 .palette-meta-description {
+  min-height: 36px;
+  font-size: 0.9rem;
+}
+
+.palette-v2 .palette-box-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.palette-v2 .palette-box-actions .btn {
+  min-height: 36px;
+  font-size: 0.86rem;
+}
+
+.palette-v2 .palette-list-head {
+  align-items: baseline;
+}
+
+.palette-v2 .palette-list-count {
+  font-size: 0.8rem;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-list th,
+.palette-v2 .palette-list td {
+  padding: 0.56rem 0.5rem;
+  vertical-align: middle;
+}
+
+.palette-v2 .palette-list thead th {
+  background: color-mix(in srgb, var(--cs-surface-soft) 90%, transparent);
+  color: var(--cs-text-primary);
+  border-bottom: 1px solid var(--cs-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.palette-v2 .palette-row {
+  cursor: pointer;
+}
+
+.palette-v2 .palette-row.is-selected > td {
+  background: color-mix(in srgb, var(--cs-primary) 11%, transparent);
+}
+
+.palette-v2 .palette-cell-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--cs-text-primary);
+}
+
+.palette-v2 .palette-cell-desc {
+  font-size: 0.8rem;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-cell-box {
+  min-width: 150px;
+}
+
+.palette-v2 .palette-cell-box-wrap {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 0.42rem;
+  align-items: center;
+}
+
+.palette-v2 .palette-cell-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--cs-border);
+  background: var(--palette-cell-swatch, color-mix(in srgb, var(--cs-surface) 80%, var(--cs-surface-soft) 20%));
+}
+
+.palette-v2 .palette-cell-values {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.palette-v2 .palette-cell-hex {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--cs-text-primary);
+  line-height: 1.2;
+}
+
+.palette-v2 .palette-cell-rgb {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-cell-empty {
+  font-size: 0.76rem;
+  color: var(--cs-text-secondary);
+}
+
+.palette-v2 .palette-cell-action {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.palette-v2 .palette-empty-message {
+  color: var(--cs-text-secondary);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 1200px) {
+  .palette-v2 .palette-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .palette-v2 .palette-source-body {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-v2 .palette-send-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .palette-v2 .palette-boxes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-v2 .palette-box-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-v2 .palette-list th:nth-child(2),
+  .palette-v2 .palette-list td:nth-child(2) {
+    display: none;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 {% set default_palette_color = preset_colors[0] if preset_colors else '#0f766e' %}
 
-<div class="palette-shell">
+<div class="palette-shell palette-v2">
   <section class="palette-top-grid">
     <article class="palette-card palette-source-card">
       <header class="palette-card-head">
-        <h5 class="palette-card-title mb-0">색상 선택</h5>
+        <div>
+          <h5 class="palette-card-title mb-0">색상 실험실</h5>
+          <p class="palette-card-subtitle">색을 고르고 박스 1~4에 바로 배치하세요.</p>
+        </div>
       </header>
       <div class="palette-source-body">
         <div class="palette-sample-wrap">
           <button type="button" id="paletteSampleBtn" class="palette-sample" aria-label="색상 선택"></button>
           <input type="color" id="paletteColorPicker" class="palette-color-picker" value="{{ default_palette_color }}" aria-hidden="true" tabindex="-1">
+          <div class="palette-live-readout" aria-live="polite">
+            <strong id="paletteLiveHex">#0F766E</strong>
+            <span id="paletteLiveRgb">RGB 15, 118, 110</span>
+          </div>
         </div>
+
         <div class="palette-source-stack">
           <div class="palette-preset-grid" id="palettePresetGrid">
-            {% for color in preset_colors[:4] %}
+            {% for color in preset_colors[:8] %}
             <button type="button" class="palette-preset-btn" data-color="{{ color|upper }}"
                     style="--palette-preset-color: {{ color|upper }}"
                     aria-label="{{ color|upper }}"></button>
             {% endfor %}
           </div>
+
           <div class="palette-input-group">
             <label class="palette-input-row">
               <span class="palette-input-label">HEX</span>
@@ -46,19 +475,20 @@
         <div class="palette-send-group">
           {% for idx in [1,2,3,4] %}
           <button type="button" class="btn btn-outline-secondary palette-send-btn" data-target="{{ idx - 1 }}">
-            박스 {{ idx }}로
+            박스 {{ idx }}로 넣기
           </button>
           {% endfor %}
         </div>
-        <button type="button" id="paletteResetBtn" class="btn btn-outline-secondary palette-reset-btn">
-          초기화
-        </button>
+        <button type="button" id="paletteResetBtn" class="btn btn-outline-secondary palette-reset-btn">초기화</button>
       </footer>
     </article>
 
     <article class="palette-card palette-boxes-card">
       <header class="palette-card-head">
-        <h5 class="palette-card-title mb-0">색상 박스</h5>
+        <div>
+          <h5 class="palette-card-title mb-0">색상 조합 보드</h5>
+          <p class="palette-card-subtitle">선택한 조합을 저장하거나 기존 항목을 수정하세요.</p>
+        </div>
       </header>
       <form id="paletteForm" method="POST" action="{{ url_for('personal.palette_save') }}" class="palette-boxes-body">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -94,8 +524,7 @@
           <button type="submit" id="paletteSaveBtn" class="btn btn-primary">
             <i class="bi bi-save2 me-1"></i>저장
           </button>
-          <button type="submit" id="paletteUpdateBtn" class="btn btn-outline-secondary" disabled
-                  formaction="">
+          <button type="submit" id="paletteUpdateBtn" class="btn btn-outline-secondary" disabled formaction="">
             <i class="bi bi-pencil me-1"></i>수정
           </button>
           <button type="button" id="paletteRemoveBtn" class="btn btn-outline-danger" disabled>
@@ -130,7 +559,8 @@
         <tbody id="paletteRows">
           {% if palette_items %}
           {% for item in palette_items %}
-          <tr data-id="{{ item.id }}"
+          <tr class="palette-row"
+              data-id="{{ item.id }}"
               data-title="{{ item.title or '' }}"
               data-description="{{ item.description or '' }}"
               data-box1-hex="{{ item.boxes[0].hex or '' }}"
@@ -148,10 +578,12 @@
             {% for box in item.boxes %}
             <td class="palette-cell-box">
               {% if box.hex %}
-              <span class="palette-cell-swatch" style="--palette-cell-swatch: {{ box.hex }}"></span>
-              <div class="palette-cell-values">
-                <span class="palette-cell-hex">{{ box.hex }}</span>
-                <span class="palette-cell-rgb">{{ box.rgb or '-' }}</span>
+              <div class="palette-cell-box-wrap">
+                <span class="palette-cell-swatch" style="--palette-cell-swatch: {{ box.hex }}"></span>
+                <div class="palette-cell-values">
+                  <span class="palette-cell-hex">{{ box.hex }}</span>
+                  <span class="palette-cell-rgb">({{ box.rgb or '-' }})</span>
+                </div>
               </div>
               {% else %}
               <span class="palette-cell-empty">-</span>
@@ -183,16 +615,10 @@
       <nav aria-label="팔레트 목록 페이지">
         <ul class="pagination pagination-sm mb-0">
           <li class="page-item {{ 'disabled' if not palette_has_prev else '' }}">
-            <a class="page-link"
-               href="{{ url_for('personal.palette', page=palette_prev_num if palette_has_prev else 1) }}">
-              이전
-            </a>
+            <a class="page-link" href="{{ url_for('personal.palette', page=palette_prev_num if palette_has_prev else 1) }}">이전</a>
           </li>
           <li class="page-item {{ 'disabled' if not palette_has_next else '' }}">
-            <a class="page-link"
-               href="{{ url_for('personal.palette', page=palette_next_num if palette_has_next else palette_pages) }}">
-              다음
-            </a>
+            <a class="page-link" href="{{ url_for('personal.palette', page=palette_next_num if palette_has_next else palette_pages) }}">다음</a>
           </li>
         </ul>
       </nav>
@@ -211,6 +637,8 @@
 (() => {
   const sampleBtn = document.getElementById('paletteSampleBtn');
   const colorPicker = document.getElementById('paletteColorPicker');
+  const liveHex = document.getElementById('paletteLiveHex');
+  const liveRgb = document.getElementById('paletteLiveRgb');
   const hexInput = document.getElementById('paletteHexInput');
   const rInput = document.getElementById('paletteRInput');
   const gInput = document.getElementById('paletteGInput');
@@ -287,6 +715,8 @@
       gInput.value = rgb.g;
       bInput.value = rgb.b;
     }
+    liveHex.textContent = normalized;
+    liveRgb.textContent = `RGB ${rgbText(rgb)}`;
   }
 
   function renderBoxes() {
@@ -321,9 +751,16 @@
     }
   }
 
+  function markActiveRow(rowId) {
+    rowsBody.querySelectorAll('tr[data-id]').forEach((row) => {
+      row.classList.toggle('is-selected', Boolean(rowId) && row.dataset.id === rowId);
+    });
+  }
+
   function setEditMode(rowId, editUrl) {
     activeRowId = rowId || '';
     paletteIdInput.value = activeRowId;
+    markActiveRow(activeRowId);
     if (activeRowId) {
       updateBtn.disabled = false;
       removeBtn.disabled = false;
@@ -374,11 +811,9 @@
     if (firstHex) setCurrentColor(firstHex);
   }
 
-  // Color picker (native)
   sampleBtn.addEventListener('click', () => colorPicker.click());
   colorPicker.addEventListener('input', () => setCurrentColor(colorPicker.value));
 
-  // HEX input
   hexInput.addEventListener('input', () => {
     let raw = hexInput.value.trim();
     if (raw && !raw.startsWith('#')) raw = `#${raw}`;
@@ -388,7 +823,6 @@
     hexInput.value = currentColor;
   });
 
-  // RGB inputs
   [rInput, gInput, bInput].forEach((input) => {
     input.addEventListener('input', () => {
       const r = clamp255(rInput.value || 0);
@@ -398,7 +832,6 @@
     });
   });
 
-  // Preset
   presetButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const color = (btn.dataset.color || FALLBACK_COLOR).toUpperCase();
@@ -406,7 +839,6 @@
     });
   });
 
-  // Send to box
   sendButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const idx = Number(btn.dataset.target || 0);
@@ -417,12 +849,10 @@
     });
   });
 
-  // Reset
   resetBtn.addEventListener('click', () => {
     clearForm();
   });
 
-  // Save (POST to save URL — handled by form action)
   saveBtn.addEventListener('click', (event) => {
     paletteForm.action = SAVE_URL;
     const hasColor = slots.some((slot) => Boolean(slot.hex));
@@ -437,7 +867,6 @@
     syncHidden();
   });
 
-  // Update (uses formaction set in setEditMode)
   updateBtn.addEventListener('click', (event) => {
     if (!activeRowId) {
       event.preventDefault();
@@ -455,7 +884,6 @@
     syncHidden();
   });
 
-  // Delete (loaded item)
   removeBtn.addEventListener('click', () => {
     if (!activeRowId) return;
     const row = rowsBody.querySelector(`tr[data-id="${activeRowId}"]`);
@@ -466,12 +894,13 @@
     deleteForm.submit();
   });
 
-  // Storage row → load into editor
   rowsBody.addEventListener('click', (event) => {
-    const editBtn = event.target.closest('.btn-edit');
-    if (!editBtn) return;
-    const row = event.target.closest('tr');
-    if (row) loadFromRow(row);
+    const row = event.target.closest('tr[data-id]');
+    if (!row) return;
+    if (event.target.closest('form')) return;
+    if (event.target.closest('.btn-edit') || !event.target.closest('button')) {
+      loadFromRow(row);
+    }
   });
 
   setCurrentColor(FALLBACK_COLOR);

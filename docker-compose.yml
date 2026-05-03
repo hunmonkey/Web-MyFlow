@@ -21,8 +21,8 @@ services:
       - WAIT_FOR_DB=1
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-1}
     volumes:
-      - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/MyFlow/data/instance}:/app/instance
-      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/MyFlow/data/uploads}:/app/app/static/uploads
+      - ${INSTANCE_HOST_PATH:-/mnt/user/appdata/Web-Personal-MyFlow/data/instance}:/app/instance
+      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/Web-Personal-MyFlow/data/uploads}:/app/app/static/uploads
       - ${BACKUP_ROOT_PATH:-/mnt/user/GRM-BACKUP/BK-Web-MyFlow}:/mnt/user/GRM-BACKUP/BK-Web-MyFlow
     depends_on:
       db:
@@ -54,7 +54,7 @@ services:
       - WAIT_FOR_DB=1
       - BACKUP_SCHEDULER_INTERVAL_SECONDS=${BACKUP_SCHEDULER_INTERVAL_SECONDS:-30}
     volumes:
-      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/MyFlow/data/uploads}:/app/app/static/uploads
+      - ${UPLOADS_HOST_PATH:-/mnt/user/appdata/Web-Personal-MyFlow/data/uploads}:/app/app/static/uploads
       - ${BACKUP_ROOT_PATH:-/mnt/user/GRM-BACKUP/BK-Web-MyFlow}:/mnt/user/GRM-BACKUP/BK-Web-MyFlow
     depends_on:
       db:
@@ -72,7 +72,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-watermelon_db}
     volumes:
-      - ${POSTGRES_HOST_PATH:-/mnt/user/appdata/MyFlow/data/postgres}:/var/lib/postgresql/data
+      - ${POSTGRES_HOST_PATH:-/mnt/user/appdata/Web-Personal-MyFlow/data/postgres}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-watermelon} -d ${POSTGRES_DB:-watermelon_db}"]
       interval: 10s

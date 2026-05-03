@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
+from sqlalchemy import inspect, text
 
 from app.backup_service import (
     BACKUP_TYPE_DATA,
@@ -21,7 +22,7 @@ from app.backup_service import (
     weekday_mask_to_values,
 )
 from app.extensions import db
-from app.models import Profile, User, UserFormatSetting
+from app.models import PersonalShortcut, PersonalShortcutGroup, Profile, User, UserFormatSetting
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
@@ -69,6 +70,59 @@ def _get_or_create_user_format_setting(user_id: int) -> UserFormatSetting:
         db.session.add(setting)
         db.session.commit()
     return setting
+
+
+def _ensure_shortcut_group_schema() -> None:
+    shortcut_table_name = PersonalShortcut.__tablename__
+    group_table_name = PersonalShortcutGroup.__tablename__
+    try:
+        table_names = set(inspect(db.engine).get_table_names())
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 그룹 테이블 조회 실패: %s", exc)
+        return
+
+    if shortcut_table_name not in table_names or group_table_name not in table_names:
+        try:
+            db.create_all()
+        except Exception as exc:  # pragma: no cover
+            current_app.logger.exception("바로가기 그룹 테이블 생성 실패: %s", exc)
+            return
+
+    try:
+        columns = {row["name"] for row in inspect(db.engine).get_columns(shortcut_table_name)}
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 컬럼 조회 실패: %s", exc)
+        return
+
+    if "group_id" in columns:
+        return
+
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text(
+                    f"ALTER TABLE {shortcut_table_name} "
+                    "ADD COLUMN group_id INTEGER"
+                )
+            )
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 group_id 컬럼 추가 실패: %s", exc)
+        return
+
+
+def _load_shortcut_groups(user_id: int) -> list[PersonalShortcutGroup]:
+    groups = (
+        PersonalShortcutGroup.query.filter_by(user_id=user_id)
+        .order_by(PersonalShortcutGroup.sort_order.asc(), PersonalShortcutGroup.id.asc())
+        .all()
+    )
+    if groups:
+        return groups
+
+    default_group = PersonalShortcutGroup(user_id=user_id, name="기본", sort_order=1)
+    db.session.add(default_group)
+    db.session.commit()
+    return [default_group]
 
 
 @settings_bp.get("/")
@@ -216,7 +270,10 @@ def backup_schedule_update():
 
 @settings_bp.route("/formats", methods=["GET", "POST"])
 def formats_index():
+    _ensure_shortcut_group_schema()
+    user_id = int(current_user.id)
     setting = _get_or_create_user_format_setting(int(current_user.id))
+    shortcut_groups = _load_shortcut_groups(user_id)
 
     if request.method == "POST":
         next_date_format = (request.form.get("date_format") or "").strip()
@@ -257,7 +314,124 @@ def formats_index():
         sample_date=sample.strftime(DATE_FORMAT_OPTIONS[setting.date_format]),
         sample_datetime=sample.strftime(DATETIME_FORMAT_OPTIONS[setting.datetime_format]),
         sample_currency=currency_preview,
+        shortcut_groups=shortcut_groups,
     )
+
+
+@settings_bp.post("/formats/shortcut-groups/add")
+def formats_shortcut_group_add():
+    _ensure_shortcut_group_schema()
+    user_id = int(current_user.id)
+    group_name = (request.form.get("group_name") or "").strip()
+    if not group_name:
+        flash("그룹 이름을 입력해 주세요.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    groups = _load_shortcut_groups(user_id)
+    next_sort_order = max((row.sort_order or 0) for row in groups) + 1
+    db.session.add(
+        PersonalShortcutGroup(
+            user_id=user_id,
+            name=group_name[:80],
+            sort_order=next_sort_order,
+        )
+    )
+    db.session.commit()
+    flash("바로가기 그룹을 추가했습니다.", "success")
+    return redirect(url_for("settings.formats_index"))
+
+
+@settings_bp.post("/formats/shortcut-groups/<int:gid>/edit")
+def formats_shortcut_group_edit(gid: int):
+    _ensure_shortcut_group_schema()
+    user_id = int(current_user.id)
+    row = PersonalShortcutGroup.query.filter_by(id=gid, user_id=user_id).first()
+    if row is None:
+        flash("수정할 그룹을 찾지 못했습니다.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    next_name = (request.form.get("group_name") or "").strip()
+    if not next_name:
+        flash("그룹 이름을 입력해 주세요.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    row.name = next_name[:80]
+    db.session.commit()
+    flash("그룹 이름을 수정했습니다.", "success")
+    return redirect(url_for("settings.formats_index"))
+
+
+@settings_bp.post("/formats/shortcut-groups/<int:gid>/delete")
+def formats_shortcut_group_delete(gid: int):
+    _ensure_shortcut_group_schema()
+    user_id = int(current_user.id)
+    groups = _load_shortcut_groups(user_id)
+    if len(groups) <= 1:
+        flash("그룹은 최소 1개 이상 있어야 합니다.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    row = PersonalShortcutGroup.query.filter_by(id=gid, user_id=user_id).first()
+    if row is None:
+        flash("삭제할 그룹을 찾지 못했습니다.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    replacement = next((item for item in groups if item.id != row.id), None)
+    if replacement is None:
+        flash("대체 그룹을 찾지 못했습니다.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    PersonalShortcut.query.filter_by(user_id=user_id, group_id=row.id).update(
+        {PersonalShortcut.group_id: replacement.id},
+        synchronize_session=False,
+    )
+    db.session.delete(row)
+    db.session.flush()
+
+    remained = (
+        PersonalShortcutGroup.query.filter_by(user_id=user_id)
+        .order_by(PersonalShortcutGroup.sort_order.asc(), PersonalShortcutGroup.id.asc())
+        .all()
+    )
+    for idx, group in enumerate(remained, start=1):
+        group.sort_order = idx
+
+    db.session.commit()
+    flash("그룹을 삭제했습니다.", "success")
+    return redirect(url_for("settings.formats_index"))
+
+
+@settings_bp.post("/formats/shortcut-groups/reorder")
+def formats_shortcut_group_reorder():
+    _ensure_shortcut_group_schema()
+    user_id = int(current_user.id)
+    groups = _load_shortcut_groups(user_id)
+    group_ids = [row.id for row in groups]
+
+    raw_order = (request.form.get("ordered_ids") or "").strip()
+    parsed_ids: list[int] = []
+    for token in raw_order.split(","):
+        token_text = token.strip()
+        if not token_text:
+            continue
+        try:
+            token_id = int(token_text)
+        except ValueError:
+            continue
+        if token_id in parsed_ids:
+            continue
+        parsed_ids.append(token_id)
+
+    if not parsed_ids or set(parsed_ids) != set(group_ids):
+        flash("순서 데이터가 올바르지 않아 저장하지 못했습니다.", "warning")
+        return redirect(url_for("settings.formats_index"))
+
+    group_map = {row.id: row for row in groups}
+    for sort_order, group_id in enumerate(parsed_ids, start=1):
+        group_map[group_id].sort_order = sort_order
+
+    db.session.commit()
+    flash("그룹 순서를 저장했습니다.", "success")
+    return redirect(url_for("settings.formats_index"))
 
 
 @settings_bp.get("/users")

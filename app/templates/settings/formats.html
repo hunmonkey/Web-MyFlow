@@ -2,11 +2,104 @@
 {% block title %}사용자 서식설정{% endblock %}
 {% block page_title %}사용자 서식설정{% endblock %}
 
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.shortcut-group-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.shortcut-group-add-form .btn {
+  min-width: 84px;
+}
+
+.shortcut-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.shortcut-group-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cs-surface) 94%, transparent);
+}
+
+.shortcut-group-item.is-dragging {
+  opacity: 0.65;
+}
+
+.shortcut-group-item.is-over {
+  border-color: var(--cs-primary);
+  background: color-mix(in srgb, var(--cs-primary) 10%, transparent);
+}
+
+.shortcut-group-handle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cs-text-secondary);
+  cursor: grab;
+  background: color-mix(in srgb, var(--cs-surface-soft) 88%, transparent);
+}
+
+.shortcut-group-item.is-dragging .shortcut-group-handle {
+  cursor: grabbing;
+}
+
+.shortcut-group-edit-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.shortcut-group-edit-form .form-control {
+  min-height: 34px !important;
+}
+
+.shortcut-group-actions {
+  display: flex;
+  gap: 0.36rem;
+}
+
+.shortcut-group-order-form {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 991.98px) {
+  .shortcut-group-item {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .shortcut-group-handle {
+    width: 100%;
+    justify-content: flex-start;
+    padding-left: 0.65rem;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="cs-module-shell">
   <div class="row g-3">
     <div class="col-12 col-xl-7">
-      <div class="glass-card">
+      <div class="glass-card mb-3">
         <div class="card-header d-flex align-items-center justify-content-between">
           <span><i class="bi bi-type me-2"></i>표시 형식 선택</span>
           <span class="small text-muted">내 계정에만 적용</span>
@@ -55,6 +148,67 @@
           </form>
         </div>
       </div>
+
+      <div class="glass-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-folder2-open me-2"></i>바로가기 그룹 관리</span>
+          <span class="small text-muted">드래그 후 순서 저장</span>
+        </div>
+        <div class="p-3 shortcut-group-shell">
+          <form method="post"
+                action="{{ url_for('settings.formats_shortcut_group_add') }}"
+                class="row g-2 shortcut-group-add-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-12 col-md-9">
+              <label class="form-label">새 그룹 이름</label>
+              <input type="text" name="group_name" class="form-control cs-input" maxlength="80"
+                     placeholder="예: 업무, 자주씀, 쇼핑">
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary btn-sm w-100">
+                <i class="bi bi-plus-lg me-1"></i>추가
+              </button>
+            </div>
+          </form>
+
+          <ul id="shortcutGroupList" class="shortcut-group-list">
+            {% for group in shortcut_groups %}
+            <li class="shortcut-group-item" data-group-id="{{ group.id }}" draggable="true">
+              <div class="shortcut-group-handle" title="드래그해서 순서 이동">
+                <i class="bi bi-grip-vertical"></i>
+              </div>
+              <form method="post"
+                    action="{{ url_for('settings.formats_shortcut_group_edit', gid=group.id) }}"
+                    class="shortcut-group-edit-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="group_name" class="form-control cs-input" maxlength="80"
+                       value="{{ group.name }}" required>
+                <button type="submit" class="btn btn-outline-secondary btn-sm">수정</button>
+              </form>
+              <div class="shortcut-group-actions">
+                <form method="post"
+                      action="{{ url_for('settings.formats_shortcut_group_delete', gid=group.id) }}"
+                      onsubmit="return confirm('이 그룹을 삭제할까요? 그룹에 있던 바로가기는 다른 그룹으로 이동됩니다.');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">삭제</button>
+                </form>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <form id="shortcutGroupOrderForm"
+                method="post"
+                action="{{ url_for('settings.formats_shortcut_group_reorder') }}"
+                class="shortcut-group-order-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="ordered_ids" id="shortcutGroupOrderedIds" value="">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-arrow-down-up me-1"></i>순서 저장
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
 
     <div class="col-12 col-xl-5">
@@ -69,4 +223,71 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const listEl = document.getElementById('shortcutGroupList');
+  const orderForm = document.getElementById('shortcutGroupOrderForm');
+  const orderedInput = document.getElementById('shortcutGroupOrderedIds');
+  if (!listEl || !orderForm || !orderedInput) return;
+
+  let draggedItem = null;
+
+  function listItems() {
+    return Array.from(listEl.querySelectorAll('.shortcut-group-item[data-group-id]'));
+  }
+
+  function collectOrderedIds() {
+    return listItems().map((item) => item.dataset.groupId || '').filter(Boolean).join(',');
+  }
+
+  listItems().forEach((item) => {
+    item.addEventListener('dragstart', () => {
+      draggedItem = item;
+      item.classList.add('is-dragging');
+    });
+
+    item.addEventListener('dragend', () => {
+      draggedItem = null;
+      item.classList.remove('is-dragging');
+      listItems().forEach((row) => row.classList.remove('is-over'));
+    });
+
+    item.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      if (!draggedItem || draggedItem === item) return;
+      item.classList.add('is-over');
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('is-over');
+    });
+
+    item.addEventListener('drop', (event) => {
+      event.preventDefault();
+      item.classList.remove('is-over');
+      if (!draggedItem || draggedItem === item) return;
+      const rect = item.getBoundingClientRect();
+      const isAfter = event.clientY > rect.top + rect.height / 2;
+      if (isAfter) {
+        item.after(draggedItem);
+      } else {
+        item.before(draggedItem);
+      }
+    });
+  });
+
+  orderForm.addEventListener('submit', (event) => {
+    const orderedIds = collectOrderedIds();
+    if (!orderedIds) {
+      event.preventDefault();
+      window.alert('저장할 순서 정보가 없습니다.');
+      return;
+    }
+    orderedInput.value = orderedIds;
+  });
+})();
+</script>
 {% endblock %}

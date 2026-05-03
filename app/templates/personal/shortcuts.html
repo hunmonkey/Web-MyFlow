@@ -49,9 +49,7 @@
 }
 @media (max-width: 991.98px) {
   .shortcut-list th:nth-child(3),
-  .shortcut-list td:nth-child(3),
-  .shortcut-list th:nth-child(4),
-  .shortcut-list td:nth-child(4) {
+  .shortcut-list td:nth-child(3) {
     display: none;
   }
 }
@@ -73,12 +71,12 @@
         <input type="text" name="site_name" class="form-control cs-input" maxlength="160" placeholder="서비스명 입력">
       </div>
       <div class="col-12 col-lg-6">
-        <label class="form-label">내용</label>
-        <input type="text" name="site_description" class="form-control cs-input" maxlength="300" placeholder="간단한 설명">
-      </div>
-      <div class="col-12 col-lg-6">
-        <label class="form-label">비고</label>
-        <input type="text" name="site_note" class="form-control cs-input" maxlength="300" placeholder="메모">
+        <label class="form-label">그룹</label>
+        <select name="group_id" class="form-select cs-input" required>
+          {% for group in shortcut_groups %}
+          <option value="{{ group.id }}">{{ group.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="col-12">
         <button type="submit" class="btn btn-primary">
@@ -96,9 +94,8 @@
           <thead>
             <tr>
               <th>명칭</th>
+              <th>그룹</th>
               <th class="shortcut-list-url">URL</th>
-              <th>내용</th>
-              <th>비고</th>
               <th>바로가기</th>
               <th>삭제</th>
             </tr>
@@ -108,9 +105,8 @@
               {% for row in shortcuts %}
               <tr>
                 <td><a class="shortcut-link" href="{{ row.site_url }}" target="_blank" rel="noopener noreferrer">{{ row.site_name }}</a></td>
+                <td>{{ row.group.name if row.group else '기본' }}</td>
                 <td class="shortcut-list-url text-truncate" title="{{ row.site_url }}">{{ row.site_url }}</td>
-                <td>{{ row.description or '-' }}</td>
-                <td>{{ row.note or '-' }}</td>
                 <td>
                   <a class="btn btn-sm btn-outline-primary" href="{{ row.site_url }}" target="_blank" rel="noopener noreferrer">열기</a>
                 </td>
@@ -125,7 +121,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="6" class="text-center py-4 text-body-secondary">저장된 바로가기가 없습니다.</td>
+                <td colspan="5" class="text-center py-4 text-body-secondary">저장된 바로가기가 없습니다.</td>
               </tr>
             {% endif %}
           </tbody>

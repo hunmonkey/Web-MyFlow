@@ -231,8 +231,32 @@ class PersonalShortcut(db.Model):
     )
     site_url = db.Column(db.String(500), nullable=False)
     site_name = db.Column(db.String(160), nullable=False)
+    group_id = db.Column(
+        db.Integer,
+        db.ForeignKey("personal_shortcut_groups.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     description = db.Column(db.String(300), nullable=True)
     note = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User", lazy="joined")
+    group = db.relationship("PersonalShortcutGroup", lazy="joined")
+
+
+class PersonalShortcutGroup(db.Model):
+    __tablename__ = "personal_shortcut_groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name = db.Column(db.String(80), nullable=False, default="기본")
+    sort_order = db.Column(db.Integer, nullable=False, default=1, index=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     user = db.relationship("User", lazy="joined")

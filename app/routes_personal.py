@@ -20,6 +20,7 @@ from app.models import (
     FinanceTransaction,
     HealthLog,
     PersonalShortcut,
+    PersonalShortcutGroup,
     PersonalPaletteSet,
     PersonalSchedule,
     PersonalSubscription,
@@ -102,21 +103,64 @@ def _ensure_palette_columns() -> None:
 
 
 def _ensure_shortcuts_table() -> None:
-    table_name = PersonalShortcut.__tablename__
+    shortcut_table_name = PersonalShortcut.__tablename__
+    group_table_name = PersonalShortcutGroup.__tablename__
     try:
-        table_exists = table_name in inspect(db.engine).get_table_names()
+        table_names = set(inspect(db.engine).get_table_names())
     except Exception as exc:  # pragma: no cover
         current_app.logger.exception("바로가기 테이블 조회 실패: %s", exc)
         return
 
-    if table_exists:
+    if shortcut_table_name not in table_names or group_table_name not in table_names:
+        try:
+            db.create_all()
+        except Exception as exc:  # pragma: no cover
+            current_app.logger.exception("바로가기 테이블 생성 실패: %s", exc)
+            return
+
+    try:
+        columns = {row["name"] for row in inspect(db.engine).get_columns(shortcut_table_name)}
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 컬럼 조회 실패: %s", exc)
+        return
+
+    if "group_id" in columns:
         return
 
     try:
-        db.create_all()
+        with db.engine.begin() as conn:
+            conn.execute(
+                text(
+                    f"ALTER TABLE {shortcut_table_name} "
+                    "ADD COLUMN group_id INTEGER"
+                )
+            )
     except Exception as exc:  # pragma: no cover
-        current_app.logger.exception("바로가기 테이블 생성 실패: %s", exc)
+        current_app.logger.exception("바로가기 group_id 컬럼 추가 실패: %s", exc)
         return
+
+
+def _normalize_shortcut_group_id(raw_value: str | None) -> int | None:
+    try:
+        parsed = int(str(raw_value or "").strip())
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _ensure_default_shortcut_group(user_id: int) -> list[PersonalShortcutGroup]:
+    groups = (
+        PersonalShortcutGroup.query.filter_by(user_id=user_id)
+        .order_by(PersonalShortcutGroup.sort_order.asc(), PersonalShortcutGroup.id.asc())
+        .all()
+    )
+    if groups:
+        return groups
+
+    row = PersonalShortcutGroup(user_id=user_id, name="기본", sort_order=1)
+    db.session.add(row)
+    db.session.commit()
+    return [row]
 
 
 def _normalize_hex(raw_value: str | None) -> str:
@@ -1043,25 +1087,34 @@ def gallery_delete(gid: int):
 def shortcuts():
     _ensure_shortcuts_table()
     user_id = int(current_user.id)
+    shortcut_groups = _ensure_default_shortcut_group(user_id)
     shortcut_items = PersonalShortcut.query.filter_by(user_id=user_id).order_by(
         PersonalShortcut.created_at.desc(), PersonalShortcut.id.desc()
     ).all()
-    return render_template("personal/shortcuts.html", shortcuts=shortcut_items)
+    return render_template(
+        "personal/shortcuts.html",
+        shortcuts=shortcut_items,
+        shortcut_groups=shortcut_groups,
+    )
 
 
 @personal_bp.route("/shortcuts/save", methods=["POST"])
 def shortcut_save():
     _ensure_shortcuts_table()
     user_id = int(current_user.id)
+    shortcut_groups = _ensure_default_shortcut_group(user_id)
+    group_ids = {row.id for row in shortcut_groups}
 
     site_url = _normalize_site_url(request.form.get("site_url"))
     site_name = (request.form.get("site_name") or "").strip()
-    description = (request.form.get("site_description") or "").strip()
-    note = (request.form.get("site_note") or "").strip()
+    selected_group_id = _normalize_shortcut_group_id(request.form.get("group_id"))
 
     if not site_url:
         flash("사이트 URL을 입력해 주세요.", "warning")
         return redirect(url_for("personal.shortcuts"))
+
+    if not selected_group_id or selected_group_id not in group_ids:
+        selected_group_id = shortcut_groups[0].id
 
     if not site_name:
         site_name = site_url
@@ -1071,8 +1124,7 @@ def shortcut_save():
             user_id=user_id,
             site_url=site_url,
             site_name=site_name[:160],
-            description=description[:300] or None,
-            note=note[:300] or None,
+            group_id=selected_group_id,
         )
     )
     db.session.commit()
@@ -1082,6 +1134,7 @@ def shortcut_save():
 
 @personal_bp.route("/shortcuts/delete/<int:shortcut_id>", methods=["POST"])
 def shortcut_delete(shortcut_id: int):
+    _ensure_shortcuts_table()
     row = PersonalShortcut.query.filter_by(id=shortcut_id, user_id=int(current_user.id)).first()
     if row is None:
         flash("삭제할 바로가기 정보를 찾지 못했습니다.", "warning")

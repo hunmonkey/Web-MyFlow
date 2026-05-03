@@ -40,7 +40,7 @@
       --cs-sidebar-w:   214px;
       --cs-header-h:    52px;
       --cs-sidebar-font-weight: 400;
-      --cs-font:        "Pretendard Variable","Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --cs-font:        "Pretendard", "Noto Sans KR", system-ui, sans-serif;
       --cs-radius:      14px;
       --cs-touch-min:   36px;
       --cs-control-h:    36px;

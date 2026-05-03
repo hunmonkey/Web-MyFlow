@@ -1,6 +1,7 @@
 /* ── Personal 전용 추가 변수 (companion.css의 변수를 재정의하지 않음) ── */
 :root {
-  --cs-display: "Fraunces", "Times New Roman", serif;
+  --cs-display: var(--cs-font);
+  --palette-slot-empty-bg: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-header) 22%);
   /* companion.css에 없는 Personal 전용 별칭 */
   --cs-brand:        var(--cs-primary);
   --cs-brand-strong: var(--cs-primary-soft);
@@ -201,6 +202,210 @@ html[data-cs-theme="dark"] {
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: uppercase;
+}
+
+/* Palette page */
+.palette-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.palette-top-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
+}
+
+.palette-left,
+.palette-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.palette-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color, var(--cs-border));
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.palette-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.palette-picker input[type="color"] {
+  width: 64px;
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+}
+
+.palette-preview {
+  --palette-preview-color: var(--palette-slot-empty-bg);
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, var(--cs-border));
+  background-color: var(--palette-preview-color);
+}
+
+.palette-mini-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.palette-source-value {
+  color: var(--color-text-main);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.palette-source-rgb {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.palette-preset-wrap {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(26px, 1fr));
+  gap: 8px;
+}
+
+.palette-preset-btn {
+  --palette-preset-color: var(--color-text-main);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background-color: var(--palette-preset-color);
+  box-shadow: inset 0 0 0 1px var(--border-color, var(--cs-border));
+}
+
+.palette-preset-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.palette-target {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.palette-move-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+.palette-right-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.palette-slot {
+  --palette-slot-color: var(--palette-slot-empty-bg);
+  border: 1px solid var(--border-color, var(--cs-border));
+  border-radius: 8px;
+  padding: 0.75rem;
+  min-height: 140px;
+  background: color-mix(in srgb, var(--bg-card) 88%, var(--bg-card-header));
+}
+
+.palette-slot-title {
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
+}
+
+.palette-slot-chip {
+  border-radius: 8px;
+  width: 100%;
+  height: 72px;
+  background: var(--palette-slot-color);
+  border: 1px solid var(--border-color, var(--cs-border));
+}
+
+.palette-slot-value {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+  display: grid;
+  gap: 2px;
+}
+
+.palette-slot-empty {
+  color: var(--color-text-secondary);
+}
+
+.palette-save-wrap {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.palette-save-title {
+  max-width: 220px;
+}
+
+.palette-slot-hex {
+  color: var(--color-text-main);
+  font-weight: 700;
+}
+
+.palette-slot-rgb {
+  color: var(--color-text-secondary);
+}
+
+.palette-list-wrap {
+  border: 1px solid var(--border-color, var(--cs-border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.palette-list th,
+.palette-list td {
+  vertical-align: middle;
+}
+
+.palette-list-title {
+  color: var(--color-text-main);
+}
+
+.palette-empty-message {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1199px) {
+  .palette-right-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .palette-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-right-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-preset-wrap {
+    grid-template-columns: repeat(10, minmax(24px, 1fr));
+  }
+
+  .palette-save-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .btn-xs {

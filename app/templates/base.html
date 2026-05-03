@@ -124,6 +124,10 @@
        class="sidebar-item {% if request.endpoint == 'personal.index' %}active{% endif %}">
       <i class="bi bi-house item-icon"></i><span>상황판</span>
     </a>
+    <a href="{{ url_for('personal.shortcuts') }}"
+       class="sidebar-item {% if request.endpoint == 'personal.shortcuts' %}active{% endif %}">
+      <i class="bi bi-link-45deg item-icon"></i><span>바로가기</span>
+    </a>
 
     <a href="{{ url_for('personal.finance') }}"
        class="sidebar-item {% if request.endpoint and (request.endpoint.startswith('personal.finance') or request.endpoint.startswith('personal.loan') or request.endpoint.startswith('personal.payment_account')) %}active{% endif %}">

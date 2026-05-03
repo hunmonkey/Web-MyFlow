@@ -1,17 +1,12 @@
 /* ── Personal 전용 추가 변수 (companion.css의 변수를 재정의하지 않음) ── */
 :root {
   --cs-display: var(--cs-font);
-  --palette-slot-empty-bg: color-mix(in srgb, var(--bg-card) 78%, var(--bg-card-header) 22%);
+  --palette-slot-empty-bg: color-mix(in srgb, var(--cs-surface) 78%, var(--cs-surface-soft) 22%);
   /* companion.css에 없는 Personal 전용 별칭 */
   --cs-brand:        var(--cs-primary);
   --cs-brand-strong: var(--cs-primary-soft);
   --cs-bg-2:         color-mix(in srgb, var(--cs-bg) 90%, var(--cs-primary));
-  --cs-surface-soft: color-mix(in srgb, var(--cs-surface) 80%, transparent);
   /* 상태 색상 (라이트 기본) */
-  --bg-card:         var(--cs-surface);
-  --bg-card-header:  var(--cs-surface-soft);
-  --shadow-card:     0 2px 8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-card-hover: 0 4px 14px rgba(15, 23, 42, 0.12), 0 2px 5px rgba(15, 23, 42, 0.08);
   --color-primary:       var(--cs-primary);
   --color-primary-hover: var(--cs-primary-soft);
   --color-success:    #166534;
@@ -41,8 +36,6 @@ html[data-cs-theme="dark"] {
   --color-warning-fg: #fcd34d;
   --color-warning-bg: rgba(245, 158, 11, 0.14);
   --color-warning-bd: rgba(251, 191, 36, 0.28);
-  --bg-card:         var(--cs-surface);
-  --shadow-card:     0 4px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* companion.css가 body/html 스타일을 처리하므로 여기서는 재정의하지 않음 */
@@ -244,15 +237,22 @@ html[data-cs-theme="dark"] {
   border-radius: 8px;
   background: transparent;
   padding: 0;
+  margin-right: 0.25rem;
 }
 
 .palette-preview {
   --palette-preview-color: var(--palette-slot-empty-bg);
-  width: 44px;
-  height: 44px;
+  width: 78px;
+  height: 78px;
   border-radius: 8px;
   border: 1px solid var(--border-color, var(--cs-border));
   background-color: var(--palette-preview-color);
+  flex-shrink: 0;
+}
+
+.palette-source-panel {
+  flex: 1;
+  min-width: 160px;
 }
 
 .palette-mini-label {
@@ -273,14 +273,15 @@ html[data-cs-theme="dark"] {
 
 .palette-preset-wrap {
   display: grid;
-  grid-template-columns: repeat(8, minmax(26px, 1fr));
+  grid-template-columns: repeat(4, minmax(30px, 1fr));
+  grid-auto-rows: 40px;
   gap: 8px;
 }
 
 .palette-preset-btn {
   --palette-preset-color: var(--color-text-main);
-  width: 26px;
-  height: 26px;
+  width: 100%;
+  height: 100%;
   border: 0;
   border-radius: 8px;
   padding: 0;
@@ -317,7 +318,7 @@ html[data-cs-theme="dark"] {
   border-radius: 8px;
   padding: 0.75rem;
   min-height: 140px;
-  background: color-mix(in srgb, var(--bg-card) 88%, var(--bg-card-header));
+  background: color-mix(in srgb, var(--cs-surface) 88%, var(--cs-surface-soft));
 }
 
 .palette-slot-title {
@@ -326,8 +327,13 @@ html[data-cs-theme="dark"] {
   color: var(--color-text-main);
 }
 
-.palette-slot-chip {
-  border-radius: 8px;
+.palette-slot-divider {
+  margin: 0.55rem 0;
+  border-top: 1px dashed var(--cs-border);
+}
+
+.palette-slot-color {
+  border-radius: 6px;
   width: 100%;
   height: 72px;
   background: var(--palette-slot-color);
@@ -348,11 +354,25 @@ html[data-cs-theme="dark"] {
 .palette-save-wrap {
   display: flex;
   gap: 0.5rem;
-  align-items: center;
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
-.palette-save-title {
-  max-width: 220px;
+.palette-save-meta {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(170px, 1fr);
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.palette-save-title,
+.palette-save-description {
+  max-width: none;
+}
+
+.palette-save-wrap > .btn {
+  align-self: stretch;
 }
 
 .palette-slot-hex {
@@ -383,6 +403,41 @@ html[data-cs-theme="dark"] {
   color: var(--color-text-secondary);
 }
 
+.palette-list-box-cell {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.palette-list-box-values {
+  display: grid;
+  gap: 2px;
+}
+
+.palette-list-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--cs-border);
+  background: var(--palette-list-swatch);
+}
+
+.palette-list-hex {
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.palette-list-rgb {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.palette-list-description {
+  color: var(--color-text-secondary);
+  max-width: 240px;
+}
+
 @media (max-width: 1199px) {
   .palette-right-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -399,12 +454,26 @@ html[data-cs-theme="dark"] {
   }
 
   .palette-preset-wrap {
-    grid-template-columns: repeat(10, minmax(24px, 1fr));
+    grid-template-columns: repeat(4, minmax(30px, 1fr));
   }
 
   .palette-save-wrap {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .palette-save-meta {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .palette-source-panel {
+    min-width: 0;
+  }
+
+  .palette-preview {
+    width: 66px;
+    height: 66px;
   }
 }
 

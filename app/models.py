@@ -213,6 +213,26 @@ class PersonalPaletteSet(db.Model):
     box3_rgb = db.Column(db.String(20), nullable=True, default="")
     box4_hex = db.Column(db.String(7), nullable=True, default="")
     box4_rgb = db.Column(db.String(20), nullable=True, default="")
+    description = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User", lazy="joined")
+
+
+class PersonalShortcut(db.Model):
+    __tablename__ = "personal_shortcuts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    site_url = db.Column(db.String(500), nullable=False)
+    site_name = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.String(300), nullable=True)
+    note = db.Column(db.String(300), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     user = db.relationship("User", lazy="joined")

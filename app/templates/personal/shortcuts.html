@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}바로가기{% endblock %}
+{% block page_title %}바로가기{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+.shortcut-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.shortcut-form-card,
+.shortcut-list-card {
+  border-radius: 14px;
+  border: 1px solid var(--cs-border);
+}
+.shortcut-form-card {
+  padding: 1rem;
+}
+.shortcut-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+.shortcut-list-card > .shortcut-list-title {
+  padding: 0.85rem 1rem 0.55rem;
+  margin: 0;
+  border-bottom: 1px solid var(--cs-border);
+}
+.shortcut-table-wrap {
+  overflow: auto;
+}
+.shortcut-list table {
+  margin: 0;
+}
+.shortcut-list th,
+.shortcut-list td {
+  white-space: nowrap;
+}
+.shortcut-list-url {
+  max-width: 320px;
+}
+.shortcut-link {
+  color: var(--bs-body-color);
+  text-decoration: none;
+  font-weight: 700;
+}
+.shortcut-link:hover {
+  text-decoration: underline;
+}
+@media (max-width: 991.98px) {
+  .shortcut-list th:nth-child(3),
+  .shortcut-list td:nth-child(3),
+  .shortcut-list th:nth-child(4),
+  .shortcut-list td:nth-child(4) {
+    display: none;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="shortcut-page">
+  <section class="glass-card shortcut-form-card">
+    <h5 class="mb-3">바로가기 등록</h5>
+    <form method="POST" action="{{ url_for('personal.shortcut_save') }}" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-12 col-lg-6">
+        <label class="form-label">사이트 URL</label>
+        <input type="text" name="site_url" class="form-control cs-input" placeholder="https://example.com" required>
+      </div>
+      <div class="col-12 col-lg-6">
+        <label class="form-label">명칭</label>
+        <input type="text" name="site_name" class="form-control cs-input" maxlength="160" placeholder="서비스명 입력">
+      </div>
+      <div class="col-12 col-lg-6">
+        <label class="form-label">내용</label>
+        <input type="text" name="site_description" class="form-control cs-input" maxlength="300" placeholder="간단한 설명">
+      </div>
+      <div class="col-12 col-lg-6">
+        <label class="form-label">비고</label>
+        <input type="text" name="site_note" class="form-control cs-input" maxlength="300" placeholder="메모">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-link-45deg me-1"></i>저장
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="glass-card shortcut-list-card">
+    <h5 class="shortcut-list-title">바로가기 목록</h5>
+    <div class="shortcut-table-wrap">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 shortcut-list">
+          <thead>
+            <tr>
+              <th>명칭</th>
+              <th class="shortcut-list-url">URL</th>
+              <th>내용</th>
+              <th>비고</th>
+              <th>바로가기</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if shortcuts %}
+              {% for row in shortcuts %}
+              <tr>
+                <td><a class="shortcut-link" href="{{ row.site_url }}" target="_blank" rel="noopener noreferrer">{{ row.site_name }}</a></td>
+                <td class="shortcut-list-url text-truncate" title="{{ row.site_url }}">{{ row.site_url }}</td>
+                <td>{{ row.description or '-' }}</td>
+                <td>{{ row.note or '-' }}</td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary" href="{{ row.site_url }}" target="_blank" rel="noopener noreferrer">열기</a>
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('personal.shortcut_delete', shortcut_id=row.id) }}"
+                        onsubmit="return confirm('이 바로가기를 삭제할까요?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-body-secondary">저장된 바로가기가 없습니다.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

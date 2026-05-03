@@ -6,7 +6,7 @@ from pathlib import Path
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
-from sqlalchemy import or_
+from sqlalchemy import inspect, or_, text
 
 from app.backup_service import (
     BACKUP_TYPE_DATA,
@@ -19,6 +19,7 @@ from app.extensions import csrf, db
 from app.models import (
     FinanceTransaction,
     HealthLog,
+    PersonalShortcut,
     PersonalPaletteSet,
     PersonalSchedule,
     PersonalSubscription,
@@ -88,6 +89,48 @@ _KOREAN_WEEKDAYS = ("월", "화", "수", "목", "금", "토", "일")
 _DISPLAY_WEEKDAY_ORDER = (6, 0, 1, 2, 3, 4, 5)
 
 
+def _ensure_palette_columns() -> None:
+    table_name = PersonalPaletteSet.__tablename__
+    try:
+        columns = {row["name"] for row in inspect(db.engine).get_columns(table_name)}
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("팔레트 컬럼 조회 실패: %s", exc)
+        return
+
+    if "description" in columns:
+        return
+
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text(
+                    f"ALTER TABLE {table_name} "
+                    "ADD COLUMN description VARCHAR(300)"
+                )
+            )
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("팔레트 컬럼 추가 실패: %s", exc)
+        return
+
+
+def _ensure_shortcuts_table() -> None:
+    table_name = PersonalShortcut.__tablename__
+    try:
+        table_exists = table_name in inspect(db.engine).get_table_names()
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 테이블 조회 실패: %s", exc)
+        return
+
+    if table_exists:
+        return
+
+    try:
+        db.create_all()
+    except Exception as exc:  # pragma: no cover
+        current_app.logger.exception("바로가기 테이블 생성 실패: %s", exc)
+        return
+
+
 def _normalize_hex(raw_value: str | None) -> str:
     text = str(raw_value or "").strip().lstrip("#").upper()
     if len(text) != 6:
@@ -117,6 +160,17 @@ def _normalize_rgb(raw_value: str | None) -> str:
     return ", ".join(values)
 
 
+def _normalize_site_url(raw_value: str | None) -> str:
+    text = (raw_value or "").strip()
+    if not text:
+        return ""
+
+    lowered = text.lower()
+    if lowered.startswith("http://") or lowered.startswith("https://") or lowered.startswith("ftp://"):
+        return text
+    return f"https://{text}"
+
+
 def _serialize_palette_rows(items: list[PersonalPaletteSet]) -> list[dict[str, object]]:
     rows = []
     for item in items:
@@ -124,6 +178,7 @@ def _serialize_palette_rows(items: list[PersonalPaletteSet]) -> list[dict[str, o
             {
                 "id": item.id,
                 "title": item.title or "색상 조합",
+                "description": item.description or "",
                 "boxes": [
                     {"hex": item.box1_hex or "", "rgb": item.box1_rgb or ""},
                     {"hex": item.box2_hex or "", "rgb": item.box2_rgb or ""},
@@ -996,8 +1051,62 @@ def gallery_delete(gid: int):
     return _coming_soon()
 
 
+@personal_bp.route("/shortcuts")
+def shortcuts():
+    _ensure_shortcuts_table()
+    user_id = int(current_user.id)
+    shortcut_items = PersonalShortcut.query.filter_by(user_id=user_id).order_by(
+        PersonalShortcut.created_at.desc(), PersonalShortcut.id.desc()
+    ).all()
+    return render_template("personal/shortcuts.html", shortcuts=shortcut_items)
+
+
+@personal_bp.route("/shortcuts/save", methods=["POST"])
+def shortcut_save():
+    _ensure_shortcuts_table()
+    user_id = int(current_user.id)
+
+    site_url = _normalize_site_url(request.form.get("site_url"))
+    site_name = (request.form.get("site_name") or "").strip()
+    description = (request.form.get("site_description") or "").strip()
+    note = (request.form.get("site_note") or "").strip()
+
+    if not site_url:
+        flash("사이트 URL을 입력해 주세요.", "warning")
+        return redirect(url_for("personal.shortcuts"))
+
+    if not site_name:
+        site_name = site_url
+
+    db.session.add(
+        PersonalShortcut(
+            user_id=user_id,
+            site_url=site_url,
+            site_name=site_name[:160],
+            description=description[:300] or None,
+            note=note[:300] or None,
+        )
+    )
+    db.session.commit()
+    flash("바로가기를 저장했습니다.", "success")
+    return redirect(url_for("personal.shortcuts"))
+
+
+@personal_bp.route("/shortcuts/delete/<int:shortcut_id>", methods=["POST"])
+def shortcut_delete(shortcut_id: int):
+    row = PersonalShortcut.query.filter_by(id=shortcut_id, user_id=int(current_user.id)).first()
+    if row is None:
+        flash("삭제할 바로가기 정보를 찾지 못했습니다.", "warning")
+    else:
+        db.session.delete(row)
+        db.session.commit()
+        flash("바로가기를 삭제했습니다.", "success")
+    return redirect(url_for("personal.shortcuts"))
+
+
 @personal_bp.route("/palette")
 def palette():
+    _ensure_palette_columns()
     user_id = int(current_user.id)
     page = _to_int(request.args.get("page"), default=1, min_value=1, max_value=999999)
     query = (
@@ -1021,12 +1130,15 @@ def palette():
 
 @personal_bp.route("/palette/save", methods=["POST"])
 def palette_save():
+    _ensure_palette_columns()
     user_id = int(current_user.id)
     title = (request.form.get("palette_title") or "").strip() or "색상 조합"
+    description = (request.form.get("palette_description") or "").strip()[:300]
 
     row = PersonalPaletteSet(
         user_id=user_id,
         title=title[:120],
+        description=description or None,
         box1_hex=_normalize_hex(request.form.get("box1_hex")),
         box1_rgb=_normalize_rgb(request.form.get("box1_rgb")),
         box2_hex=_normalize_hex(request.form.get("box2_hex")),

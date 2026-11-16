@@ -1,67 +1,48 @@
 # MyFlow
 
-재훈 님의 개인 사이트를 **Companion(Banana)와 분리된 독립 서비스**로 운영하기 위한 기본 프로젝트입니다.  
-핵심은 "작은 웹앱 + PostgreSQL DB + Docker" 3가지를 한 세트로 묶어두는 것입니다.
+> A self-hosted personal life dashboard: household finances, subscriptions, health logs,
+> schedules, shortcuts and color palettes — in one Flask + PostgreSQL web app on Docker.
 
-## 1. 이 프로젝트가 하는 일
+가계부, 구독, 건강 기록, 일정, 바로가기를 **한 곳에서 관리하는 개인용 웹 대시보드**입니다.
+내 서버(홈랩)에 Docker로 올려 두고 브라우저로 접속해 씁니다.
 
-- 개인 소개/프로젝트 목록/연락처를 보여주는 웹 페이지를 제공합니다.
-- 데이터는 PostgreSQL(데이터베이스)에 저장합니다.
-- Docker로 통째로 묶어 운영서버에서 같은 방식으로 실행할 수 있습니다.
+---
 
-비유로 보면:
-- 웹앱 = 가게 진열대
-- DB = 창고
-- Docker = 가게를 통째로 포장한 컨테이너
+## 주요 기능
 
-## 2. 빠른 시작 (로컬 또는 서버 공통)
+- **가계부** — 수입·지출 기록과 조회
+- **구독 관리** — 정기 결제 서비스 목록, 사용·중지 전환
+- **건강 기록** — 날짜별 건강 수치 기록과 조회
+- **일정** — 대시보드 일정 요약과 달력 화면
+- **바로가기** — 자주 가는 사이트를 묶음별로 정리
+- **색상 팔레트** — 디자인 작업용 색 조합 저장
+- **자동 백업** — 화면에서 정한 요일·시간에 DB와 파일을 자동으로 백업 (별도 백업 컨테이너)
+- **로그인** — 개인 정보를 보호하기 위한 계정 로그인
 
-1. `.env` 만들기
+> 준비 중: 대출 관리, 갤러리, 가계부 분류·결제수단 편집, 엑셀 내보내기 (화면만 있고 저장 기능은 다음 단계에서 연결 예정)
+
+## 기술 스택
+
+| 구분 | 사용 기술 |
+|---|---|
+| 서버 | Python · Flask · Flask-Login · Flask-WTF |
+| DB | PostgreSQL 15 · SQLAlchemy |
+| 실행 | Gunicorn |
+| 배포 | Docker · Docker Compose (웹앱 + DB + 백업 스케줄러) |
+
+## 빠른 시작
+
 ```bash
-cd /workspace/dev_codeserver_MyFlow
-./scripts/setup_env.sh
-```
-
-2. `.env`에서 최소 2개 값 수정
-- `POSTGRES_PASSWORD`
-- `CONTACT_EMAIL`
-
-3. 컨테이너 실행
-```bash
+./scripts/setup_env.sh          # .env 만들기 (POSTGRES_PASSWORD 등 값 채우기)
 docker compose up -d --build
 ```
 
-4. 상태 확인
-```bash
-docker compose ps
-docker inspect --format '{{.State.Health.Status}}' Web-Personal-Myflow-system
-```
+브라우저에서 `http://<서버 주소>:985` 로 접속합니다.
 
-5. 접속 확인  
-- `http://서버IP:985`
+## 더 알아보기
 
-## 3. 운영서버 반영용 스크립트
+환경값 설정, 운영 반영 스크립트, 폴더 역할은 **[docs/GUIDE.md](docs/GUIDE.md)** 에 정리해 두었습니다.
 
-아래 스크립트는 `docker compose up -d --build`와 상태 확인을 한 번에 실행합니다.
+---
 
-```bash
-cd /workspace/dev_codeserver_MyFlow
-./scripts/deploy_personal.sh
-```
-
-자동 백업 스케줄:
-- 사이트 `환경설정` 페이지에서 DB/일반자료 자동 백업의 요일·시간을 설정할 수 있습니다.
-- 스케줄 실행은 `backup-scheduler` 컨테이너가 담당합니다.
-
-## 4. 폴더 역할
-
-- `app/`: 실제 사이트 코드
-- `docker-compose.yml`: 웹앱 + DB를 같이 올리는 실행 설계도
-- `Dockerfile`: 웹앱 컨테이너 제작 레시피
-- `.env.example`: 환경값 샘플
-- `scripts/`: 반복 작업 자동화 스크립트
-
-## 5. 중요한 원칙
-
-- `Banana` 폴더(`/workspace/dev_codeserver_Banana`)는 **참고 전용**입니다.
-- 이 프로젝트(`dev_codeserver_MyFlow`)에서만 수정/배포 작업을 진행합니다.
+만든 사람: [hunmonkey](https://github.com/hunmonkey)

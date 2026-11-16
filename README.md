@@ -6,6 +6,12 @@
 가계부, 구독, 건강 기록, 일정, 바로가기를 **한 곳에서 관리하는 개인용 웹 대시보드**입니다.
 내 서버(홈랩)에 Docker로 올려 두고 브라우저로 접속해 씁니다.
 
+| 상황판 | 건강 기록 |
+|---|---|
+| ![MyFlow 상황판 화면](docs/screenshots/dashboard.png) | ![MyFlow 건강 기록 화면](docs/screenshots/health.png) |
+
+<sub>화면 속 자료는 모두 예시 데이터입니다.</sub>
+
 ---
 
 ## 주요 기능
